@@ -1,0 +1,37 @@
+{
+  "concepts": [
+    {
+      "id": "derivative",
+      "term": "导数",
+      "aliases": ["一阶导数"],
+      "category": "微积分基础",
+      "priority": "core",
+      "examTag": "必考定义",
+      "targetPage": "p01-derivative-intuition",
+      "brief": "函数 $f$ 在点 $x_0$ 处的瞬时变化率，即差商当增量 $h \\to 0$ 时的极限。",
+      "formula": "$$f'(x_0) = \\lim_{h \\to 0} \\frac{f(x_0 + h) - f(x_0)}{h}$$"
+    },
+    {
+      "id": "continuity",
+      "term": "连续函数",
+      "aliases": ["连续性"],
+      "category": "微积分基础",
+      "priority": "high",
+      "examTag": "基础性质",
+      "targetPage": "p01-derivative-intuition",
+      "brief": "在点 $x_0$ 处极限值等于函数值，即 $\\lim_{x \\to x_0} f(x) = f(x_0)$。",
+      "formula": "$$\\forall \\varepsilon > 0,\\ \\exists \\delta > 0:\\ |x - x_0| < \\delta \\implies |f(x) - f(x_0)| < \\varepsilon$$"
+    },
+    {
+      "id": "linear-map",
+      "term": "线性变换",
+      "aliases": ["线性映射"],
+      "category": "线性代数",
+      "priority": "core",
+      "examTag": "核心结构",
+      "targetPage": "p02-linear-transformation",
+      "brief": "向量空间之间同时保持向量加法与数乘运算的映射 $T: V \\to W$。",
+      "formula": "$$T(\\alpha u + \\beta v) = \\alpha T(u) + \\beta T(v)$$"
+    }
+  ]
+}

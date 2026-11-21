@@ -1,0 +1,88 @@
+{
+  "site": {
+    "title": "数学分析与线代示例讲义",
+    "subtitle": "Interactive Study Notes Starter",
+    "description": "基于 notes-site-base 的双模式示例讲义。"
+  },
+  "examOverview": {
+    "title": "核心模块导览",
+    "summary": "示例站包含微积分与线性代数两节入门微课，演示构建时 KaTeX 公式、概念首次提及速览卡与折叠自测解答框。",
+    "blocks": [
+      {
+        "label": "微积分基础",
+        "badge": "核心",
+        "focus": "导数的局部线性逼近与可导必连续"
+      },
+      {
+        "label": "线性映射",
+        "badge": "重点",
+        "focus": "保持加法与数乘的矩阵表示与核空间"
+      }
+    ],
+    "quickLinks": [
+      {
+        "slug": "p01-derivative-intuition",
+        "code": "C1",
+        "group": "微积分",
+        "label": "导数与局部线性逼近"
+      },
+      {
+        "slug": "p02-linear-transformation",
+        "code": "L1",
+        "group": "线性代数",
+        "label": "线性变换与矩阵表示"
+      }
+    ]
+  },
+  "parts": [
+    {
+      "id": "part1",
+      "code": "Part 1",
+      "title": "核心概念入门示例",
+      "shortTitle": "入门示例",
+      "summary": "两篇短微课演示双模式讲义、KaTeX 公式、跨页概念卡片与折叠解答。",
+      "priority": "core",
+      "order": 1,
+      "chapters": [
+        {
+          "id": "ch1",
+          "partId": "part1",
+          "title": "局部线性化与线性映射",
+          "shortTitle": "线性化与映射",
+          "lectureRef": "示例第 1 讲",
+          "order": 1,
+          "pages": [
+            {
+              "id": "p01-derivative-intuition",
+              "slug": "p01-derivative-intuition",
+              "title": "导数与局部线性逼近",
+              "shortTitle": "导数与局部线性逼近",
+              "file": "content/part1/p01-derivative-intuition.md",
+              "summary": "从切线斜率与瞬时变化率出发，理解导数定义、可导必连续以及一阶微分近似。",
+              "readMinutes": 3,
+              "priority": "core",
+              "examTag": "核心概念",
+              "homeworkRefs": ["示例习题 1.1"],
+              "definesConcepts": ["derivative", "continuity"],
+              "order": 1
+            },
+            {
+              "id": "p02-linear-transformation",
+              "slug": "p02-linear-transformation",
+              "title": "线性变换与矩阵表示",
+              "shortTitle": "线性变换与矩阵表示",
+              "file": "content/part1/p02-linear-transformation.md",
+              "summary": "通过保持加法与数乘的映射建立矩阵表示，并结合折叠自测例题演练核空间计算。",
+              "readMinutes": 3,
+              "priority": "high",
+              "examTag": "高频计算",
+              "homeworkRefs": ["示例习题 2.1"],
+              "definesConcepts": ["linear-map"],
+              "order": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

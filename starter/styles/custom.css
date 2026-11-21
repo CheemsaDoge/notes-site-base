@@ -1,0 +1,9 @@
+/* Optional course-specific style overrides.
+   Add "styles/custom.css" to paths.extraStyles in site.config.json (or omit extraStyles
+   to auto-load this file) to customize accent colors or spacing without editing notes-site-base.
+
+:root {
+  --accent-brand-light: #d97757;
+  --accent-brand-dark: #e38b6b;
+}
+*/

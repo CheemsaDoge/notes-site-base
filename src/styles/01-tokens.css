@@ -1,0 +1,672 @@
+/* ==========================================================================
+   01-tokens.css — Design Tokens, Color Schemes, Typography & Base Reset
+   Claude / Anthropic editorial aesthetic for notes-site-base.
+   Follows modern-web-guidance: dark-mode, dark-mode-toggle,
+   selector-atrule-combinations, form-factor-adaptation, typography,
+   visually-stable-font-fallbacks, visually-stable-mixed-fonts,
+   improve-text-layout-and-legibility.
+   ========================================================================== */
+
+/* Self-hosted zero-CDN UI Latin variable font (Editorial reading fonts —
+   Source Serif 4, Noto Serif SC, LXGW WenKai Screen — are bundled in 00-fonts.*.css) */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* Measured Claude / Anthropic Warm Alabaster & Warm Obsidian Neutral Ramp */
+  --bg-page-light: #faf9f5;      /* anthropic gray-050 */
+  --bg-page-dark: #1a1918;       /* anthropic gray-900 */
+
+  --bg-sidebar-light: #f5f4ed;   /* anthropic gray-100 */
+  --bg-sidebar-dark: #141413;    /* anthropic gray-950 */
+
+  --bg-surface-light: #ffffff;   /* anthropic gray-000 */
+  --bg-surface-dark: #262624;    /* anthropic gray-800 */
+
+  --bg-elevated-light: #ffffff;
+  --bg-elevated-dark: #262624;
+
+  --bg-subtle-light: #f0eee6;    /* anthropic gray-150 */
+  --bg-subtle-dark: #30302e;     /* anthropic gray-750 */
+
+  --bg-muted-light: #e8e6dc;     /* anthropic gray-200 */
+  --bg-muted-dark: #3d3d3a;      /* anthropic gray-700 */
+
+  --text-primary-light: #141413; /* anthropic gray-950 (17.5:1 on #faf9f5) */
+  --text-primary-dark: #faf9f5;  /* anthropic gray-050 (16.7:1 on #1a1918) */
+
+  --text-secondary-light: #5e5d59; /* anthropic gray-600 (6.26:1) */
+  --text-secondary-dark: #c2c0b6;  /* anthropic gray-350 (9.62:1) */
+
+  --text-muted-light: #6a6861;   /* AA-verified warm stone (5.29:1 / 4.80:1 on subtle) */
+  --text-muted-dark: #a3a198;    /* AA-verified warm stone (6.78:1 / 5.11:1 on subtle) */
+
+  --border-light: #e8e6dc;       /* anthropic gray-200 */
+  --border-dark: #30302e;        /* anthropic gray-750 */
+
+  --border-strong-light: #d1cfc5; /* anthropic gray-300 */
+  --border-strong-dark: #4d4c48;  /* anthropic gray-650 */
+
+  /* Signature Claude Terracotta Clay Accent (WCAG AA split for small text vs brand bars) */
+  --accent-brand-light: #d97757;       /* anthropic --color-clay */
+  --accent-brand-dark: #e38b6b;
+
+  --accent-interactive-light: #c6613f; /* anthropic --color-clay-hover */
+  --accent-interactive-dark: #d97757;
+
+  --accent-light: #ad4b2b;             /* AA text clay (5.22:1 on #faf9f5, 4.73:1 on #f0eee6) */
+  --accent-dark: #e38b6b;              /* AA text clay (6.83:1 on #1a1918, 5.15:1 on #30302e) */
+
+  --accent-hover-light: #943e22;
+  --accent-hover-dark: #efa186;
+
+  --accent-contrast-light: #faf9f5;
+  --accent-contrast-dark: #141413;
+
+  --accent-soft-light: rgb(217 119 87 / 0.11);
+  --accent-soft-dark: rgb(227 139 107 / 0.16);
+
+  /* Calm Charcoal Primary CTA (exact claude.com --theme-button-primary) */
+  --btn-primary-bg-light: #141413;
+  --btn-primary-bg-dark: #faf9f5;
+  --btn-primary-bg-hover-light: #30302e;
+  --btn-primary-bg-hover-dark: #e8e6dc;
+  --btn-primary-fg-light: #faf9f5;
+  --btn-primary-fg-dark: #141413;
+
+  /* Inline Concept Recall Ref (Terracotta editorial underline) */
+  --concept-line-light: #c6613f;
+  --concept-line-dark: #e38b6b;
+
+  --concept-bg-light: rgb(217 119 87 / 0.07);
+  --concept-bg-dark: rgb(227 139 107 / 0.11);
+
+  --concept-bg-hover-light: rgb(217 119 87 / 0.15);
+  --concept-bg-hover-dark: rgb(227 139 107 / 0.21);
+
+  /* Botanical & Mineral Semantic Accents (Anthropic Olive / Mineral / Cactus / Sky / Heather / Coral) */
+  --success-light: #3b604f;
+  --success-dark: #8ec4b1;
+
+  --success-soft-light: rgb(98 153 135 / 0.14);
+  --success-soft-dark: rgb(142 196 177 / 0.16);
+
+  /* Editorial Callout Accents */
+  --callout-exam-light: #ad4b2b;
+  --callout-exam-dark: #e38b6b;
+  --callout-exam-bg-light: #fbf2ee;
+  --callout-exam-bg-dark: rgb(217 119 87 / 0.11);
+
+  --callout-tip-light: #3b604f;
+  --callout-tip-dark: #8ec4b1;
+  --callout-tip-bg-light: #f1f7f4;
+  --callout-tip-bg-dark: rgb(98 153 135 / 0.11);
+
+  --callout-warn-light: #8a5a12;
+  --callout-warn-dark: #e5b974;
+  --callout-warn-bg-light: #fcf6ea;
+  --callout-warn-bg-dark: rgb(229 185 116 / 0.11);
+
+  --callout-errata-light: #5a5394;
+  --callout-errata-dark: #b9b4e6;
+  --callout-errata-bg-light: #f5f4fa;
+  --callout-errata-bg-dark: rgb(130 125 189 / 0.13);
+
+  --callout-note-light: #184f95;
+  --callout-note-dark: #8cb8e8;
+  --callout-note-bg-light: #f2f6fb;
+  --callout-note-bg-dark: rgb(106 155 204 / 0.11);
+
+  /* Priority Badges (Core Exam Brick / High Priority Ochre) */
+  --priority-core-light: #a63b32;
+  --priority-core-dark: #ec8b82;
+  --priority-core-bg-light: #fbf0ee;
+  --priority-core-bg-dark: rgb(191 77 67 / 0.16);
+  --priority-core-border-light: #ecc5bf;
+  --priority-core-border-dark: rgb(236 139 130 / 0.34);
+
+  --priority-high-light: #8a5a12;
+  --priority-high-dark: #e5b974;
+  --priority-high-bg-light: #faf3e5;
+  --priority-high-bg-dark: rgb(229 185 116 / 0.15);
+  --priority-high-border-light: #e6d2ae;
+  --priority-high-border-dark: rgb(229 185 116 / 0.34);
+
+  /* Scrollbar & Whisper-Soft Warm Elevation (measured from platform.claude.com/docs) */
+  --scrollbar-track-light: #f5f4ed;
+  --scrollbar-track-dark: #141413;
+  --scrollbar-thumb-light: #c2c0b6;
+  --scrollbar-thumb-dark: #4d4c48;
+
+  --shadow-sm-light: 0 1px 2px 0 rgb(20 20 19 / 0.05);
+  --shadow-sm-dark: 0 1px 2px 0 rgb(0 0 0 / 0.32);
+
+  --shadow-md-light: 0 4px 12px -2px rgb(20 20 19 / 0.08), 0 1px 3px 0 rgb(20 20 19 / 0.05);
+  --shadow-md-dark: 0 8px 24px -4px rgb(0 0 0 / 0.46), 0 1px 3px 0 rgb(0 0 0 / 0.32);
+
+  --shadow-lg-light: 0 16px 36px -6px rgb(20 20 19 / 0.13), 0 4px 12px -2px rgb(20 20 19 / 0.06);
+  --shadow-lg-dark: 0 20px 44px -8px rgb(0 0 0 / 0.62), 0 4px 14px -2px rgb(0 0 0 / 0.42);
+
+  /* Default semantic tokens (fallback for browsers without light-dark()) */
+  --bg-page: var(--bg-page-light);
+  --bg-sidebar: var(--bg-sidebar-light);
+  --bg-surface: var(--bg-surface-light);
+  --bg-elevated: var(--bg-elevated-light);
+  --bg-subtle: var(--bg-subtle-light);
+  --bg-muted: var(--bg-muted-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --text-muted: var(--text-muted-light);
+  --border: var(--border-light);
+  --border-strong: var(--border-strong-light);
+  --accent-brand: var(--accent-brand-light);
+  --accent-interactive: var(--accent-interactive-light);
+  --accent: var(--accent-light);
+  --accent-hover: var(--accent-hover-light);
+  --accent-contrast: var(--accent-contrast-light);
+  --accent-soft: var(--accent-soft-light);
+  --btn-primary-bg: var(--btn-primary-bg-light);
+  --btn-primary-bg-hover: var(--btn-primary-bg-hover-light);
+  --btn-primary-fg: var(--btn-primary-fg-light);
+  --concept-line: var(--concept-line-light);
+  --concept-bg: var(--concept-bg-light);
+  --concept-bg-hover: var(--concept-bg-hover-light);
+  --success: var(--success-light);
+  --success-soft: var(--success-soft-light);
+  --callout-exam: var(--callout-exam-light);
+  --callout-exam-bg: var(--callout-exam-bg-light);
+  --callout-tip: var(--callout-tip-light);
+  --callout-tip-bg: var(--callout-tip-bg-light);
+  --callout-warn: var(--callout-warn-light);
+  --callout-warn-bg: var(--callout-warn-bg-light);
+  --callout-errata: var(--callout-errata-light);
+  --callout-errata-bg: var(--callout-errata-bg-light);
+  --callout-note: var(--callout-note-light);
+  --callout-note-bg: var(--callout-note-bg-light);
+  --priority-core: var(--priority-core-light);
+  --priority-core-bg: var(--priority-core-bg-light);
+  --priority-core-border: var(--priority-core-border-light);
+  --priority-high: var(--priority-high-light);
+  --priority-high-bg: var(--priority-high-bg-light);
+  --priority-high-border: var(--priority-high-border-light);
+  --scrollbar-track: var(--scrollbar-track-light);
+  --scrollbar-thumb: var(--scrollbar-thumb-light);
+  --shadow-sm: var(--shadow-sm-light);
+  --shadow-md: var(--shadow-md-light);
+  --shadow-lg: var(--shadow-lg-light);
+
+  /* Base color-scheme stays light dark; <meta> overrides map back below */
+  color-scheme: light dark;
+  --color-scheme: light;
+
+  @media (prefers-color-scheme: dark) {
+    --color-scheme: dark;
+    --bg-page: var(--bg-page-dark);
+    --bg-sidebar: var(--bg-sidebar-dark);
+    --bg-surface: var(--bg-surface-dark);
+    --bg-elevated: var(--bg-elevated-dark);
+    --bg-subtle: var(--bg-subtle-dark);
+    --bg-muted: var(--bg-muted-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --text-muted: var(--text-muted-dark);
+    --border: var(--border-dark);
+    --border-strong: var(--border-strong-dark);
+    --accent-brand: var(--accent-brand-dark);
+    --accent-interactive: var(--accent-interactive-dark);
+    --accent: var(--accent-dark);
+    --accent-hover: var(--accent-hover-dark);
+    --accent-contrast: var(--accent-contrast-dark);
+    --accent-soft: var(--accent-soft-dark);
+    --btn-primary-bg: var(--btn-primary-bg-dark);
+    --btn-primary-bg-hover: var(--btn-primary-bg-hover-dark);
+    --btn-primary-fg: var(--btn-primary-fg-dark);
+    --concept-line: var(--concept-line-dark);
+    --concept-bg: var(--concept-bg-dark);
+    --concept-bg-hover: var(--concept-bg-hover-dark);
+    --success: var(--success-dark);
+    --success-soft: var(--success-soft-dark);
+    --callout-exam: var(--callout-exam-dark);
+    --callout-exam-bg: var(--callout-exam-bg-dark);
+    --callout-tip: var(--callout-tip-dark);
+    --callout-tip-bg: var(--callout-tip-bg-dark);
+    --callout-warn: var(--callout-warn-dark);
+    --callout-warn-bg: var(--callout-warn-bg-dark);
+    --callout-errata: var(--callout-errata-dark);
+    --callout-errata-bg: var(--callout-errata-bg-dark);
+    --callout-note: var(--callout-note-dark);
+    --callout-note-bg: var(--callout-note-bg-dark);
+    --priority-core: var(--priority-core-dark);
+    --priority-core-bg: var(--priority-core-bg-dark);
+    --priority-core-border: var(--priority-core-border-dark);
+    --priority-high: var(--priority-high-dark);
+    --priority-high-bg: var(--priority-high-bg-dark);
+    --priority-high-border: var(--priority-high-border-dark);
+    --scrollbar-track: var(--scrollbar-track-dark);
+    --scrollbar-thumb: var(--scrollbar-thumb-dark);
+    --shadow-sm: var(--shadow-sm-dark);
+    --shadow-md: var(--shadow-md-dark);
+    --shadow-lg: var(--shadow-lg-dark);
+  }
+
+  /* Map <meta name="color-scheme"> override back to CSS color-scheme */
+  &:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+    --color-scheme: dark;
+    --bg-page: var(--bg-page-dark);
+    --bg-sidebar: var(--bg-sidebar-dark);
+    --bg-surface: var(--bg-surface-dark);
+    --bg-elevated: var(--bg-elevated-dark);
+    --bg-subtle: var(--bg-subtle-dark);
+    --bg-muted: var(--bg-muted-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --text-muted: var(--text-muted-dark);
+    --border: var(--border-dark);
+    --border-strong: var(--border-strong-dark);
+    --accent-brand: var(--accent-brand-dark);
+    --accent-interactive: var(--accent-interactive-dark);
+    --accent: var(--accent-dark);
+    --accent-hover: var(--accent-hover-dark);
+    --accent-contrast: var(--accent-contrast-dark);
+    --accent-soft: var(--accent-soft-dark);
+    --btn-primary-bg: var(--btn-primary-bg-dark);
+    --btn-primary-bg-hover: var(--btn-primary-bg-hover-dark);
+    --btn-primary-fg: var(--btn-primary-fg-dark);
+    --concept-line: var(--concept-line-dark);
+    --concept-bg: var(--concept-bg-dark);
+    --concept-bg-hover: var(--concept-bg-hover-dark);
+    --success: var(--success-dark);
+    --success-soft: var(--success-soft-dark);
+    --callout-exam: var(--callout-exam-dark);
+    --callout-exam-bg: var(--callout-exam-bg-dark);
+    --callout-tip: var(--callout-tip-dark);
+    --callout-tip-bg: var(--callout-tip-bg-dark);
+    --callout-warn: var(--callout-warn-dark);
+    --callout-warn-bg: var(--callout-warn-bg-dark);
+    --callout-errata: var(--callout-errata-dark);
+    --callout-errata-bg: var(--callout-errata-bg-dark);
+    --callout-note: var(--callout-note-dark);
+    --callout-note-bg: var(--callout-note-bg-dark);
+    --priority-core: var(--priority-core-dark);
+    --priority-core-bg: var(--priority-core-bg-dark);
+    --priority-core-border: var(--priority-core-border-dark);
+    --priority-high: var(--priority-high-dark);
+    --priority-high-bg: var(--priority-high-bg-dark);
+    --priority-high-border: var(--priority-high-border-dark);
+    --scrollbar-track: var(--scrollbar-track-dark);
+    --scrollbar-thumb: var(--scrollbar-thumb-dark);
+    --shadow-sm: var(--shadow-sm-dark);
+    --shadow-md: var(--shadow-md-dark);
+    --shadow-lg: var(--shadow-lg-dark);
+  }
+
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+    --color-scheme: light;
+    --bg-page: var(--bg-page-light);
+    --bg-sidebar: var(--bg-sidebar-light);
+    --bg-surface: var(--bg-surface-light);
+    --bg-elevated: var(--bg-elevated-light);
+    --bg-subtle: var(--bg-subtle-light);
+    --bg-muted: var(--bg-muted-light);
+    --text-primary: var(--text-primary-light);
+    --text-secondary: var(--text-secondary-light);
+    --text-muted: var(--text-muted-light);
+    --border: var(--border-light);
+    --border-strong: var(--border-strong-light);
+    --accent-brand: var(--accent-brand-light);
+    --accent-interactive: var(--accent-interactive-light);
+    --accent: var(--accent-light);
+    --accent-hover: var(--accent-hover-light);
+    --accent-contrast: var(--accent-contrast-light);
+    --accent-soft: var(--accent-soft-light);
+    --btn-primary-bg: var(--btn-primary-bg-light);
+    --btn-primary-bg-hover: var(--btn-primary-bg-hover-light);
+    --btn-primary-fg: var(--btn-primary-fg-light);
+    --concept-line: var(--concept-line-light);
+    --concept-bg: var(--concept-bg-light);
+    --concept-bg-hover: var(--concept-bg-hover-light);
+    --success: var(--success-light);
+    --success-soft: var(--success-soft-light);
+    --callout-exam: var(--callout-exam-light);
+    --callout-exam-bg: var(--callout-exam-bg-light);
+    --callout-tip: var(--callout-tip-light);
+    --callout-tip-bg: var(--callout-tip-bg-light);
+    --callout-warn: var(--callout-warn-light);
+    --callout-warn-bg: var(--callout-warn-bg-light);
+    --callout-errata: var(--callout-errata-light);
+    --callout-errata-bg: var(--callout-errata-bg-light);
+    --callout-note: var(--callout-note-light);
+    --callout-note-bg: var(--callout-note-bg-light);
+    --priority-core: var(--priority-core-light);
+    --priority-core-bg: var(--priority-core-bg-light);
+    --priority-core-border: var(--priority-core-border-light);
+    --priority-high: var(--priority-high-light);
+    --priority-high-bg: var(--priority-high-bg-light);
+    --priority-high-border: var(--priority-high-border-light);
+    --scrollbar-track: var(--scrollbar-track-light);
+    --scrollbar-thumb: var(--scrollbar-thumb-light);
+    --shadow-sm: var(--shadow-sm-light);
+    --shadow-md: var(--shadow-md-light);
+    --shadow-lg: var(--shadow-lg-light);
+  }
+
+  /* Progressive light-dark() tokens (auto-tracks computed color-scheme) */
+  @supports (color: light-dark(white, black)) {
+    --bg-page: light-dark(var(--bg-page-light), var(--bg-page-dark));
+    --bg-sidebar: light-dark(var(--bg-sidebar-light), var(--bg-sidebar-dark));
+    --bg-surface: light-dark(var(--bg-surface-light), var(--bg-surface-dark));
+    --bg-elevated: light-dark(var(--bg-elevated-light), var(--bg-elevated-dark));
+    --bg-subtle: light-dark(var(--bg-subtle-light), var(--bg-subtle-dark));
+    --bg-muted: light-dark(var(--bg-muted-light), var(--bg-muted-dark));
+    --text-primary: light-dark(var(--text-primary-light), var(--text-primary-dark));
+    --text-secondary: light-dark(var(--text-secondary-light), var(--text-secondary-dark));
+    --text-muted: light-dark(var(--text-muted-light), var(--text-muted-dark));
+    --border: light-dark(var(--border-light), var(--border-dark));
+    --border-strong: light-dark(var(--border-strong-light), var(--border-strong-dark));
+    --accent-brand: light-dark(var(--accent-brand-light), var(--accent-brand-dark));
+    --accent-interactive: light-dark(var(--accent-interactive-light), var(--accent-interactive-dark));
+    --accent: light-dark(var(--accent-light), var(--accent-dark));
+    --accent-hover: light-dark(var(--accent-hover-light), var(--accent-hover-dark));
+    --accent-contrast: light-dark(var(--accent-contrast-light), var(--accent-contrast-dark));
+    --accent-soft: light-dark(var(--accent-soft-light), var(--accent-soft-dark));
+    --btn-primary-bg: light-dark(var(--btn-primary-bg-light), var(--btn-primary-bg-dark));
+    --btn-primary-bg-hover: light-dark(var(--btn-primary-bg-hover-light), var(--btn-primary-bg-hover-dark));
+    --btn-primary-fg: light-dark(var(--btn-primary-fg-light), var(--btn-primary-fg-dark));
+    --concept-line: light-dark(var(--concept-line-light), var(--concept-line-dark));
+    --concept-bg: light-dark(var(--concept-bg-light), var(--concept-bg-dark));
+    --concept-bg-hover: light-dark(var(--concept-bg-hover-light), var(--concept-bg-hover-dark));
+    --success: light-dark(var(--success-light), var(--success-dark));
+    --success-soft: light-dark(var(--success-soft-light), var(--success-soft-dark));
+    --callout-exam: light-dark(var(--callout-exam-light), var(--callout-exam-dark));
+    --callout-exam-bg: light-dark(var(--callout-exam-bg-light), var(--callout-exam-bg-dark));
+    --callout-tip: light-dark(var(--callout-tip-light), var(--callout-tip-dark));
+    --callout-tip-bg: light-dark(var(--callout-tip-bg-light), var(--callout-tip-bg-dark));
+    --callout-warn: light-dark(var(--callout-warn-light), var(--callout-warn-dark));
+    --callout-warn-bg: light-dark(var(--callout-warn-bg-light), var(--callout-warn-bg-dark));
+    --callout-errata: light-dark(var(--callout-errata-light), var(--callout-errata-dark));
+    --callout-errata-bg: light-dark(var(--callout-errata-bg-light), var(--callout-errata-bg-dark));
+    --callout-note: light-dark(var(--callout-note-light), var(--callout-note-dark));
+    --callout-note-bg: light-dark(var(--callout-note-bg-light), var(--callout-note-bg-dark));
+    --priority-core: light-dark(var(--priority-core-light), var(--priority-core-dark));
+    --priority-core-bg: light-dark(var(--priority-core-bg-light), var(--priority-core-bg-dark));
+    --priority-core-border: light-dark(var(--priority-core-border-light), var(--priority-core-border-dark));
+    --priority-high: light-dark(var(--priority-high-light), var(--priority-high-dark));
+    --priority-high-bg: light-dark(var(--priority-high-bg-light), var(--priority-high-bg-dark));
+    --priority-high-border: light-dark(var(--priority-high-border-light), var(--priority-high-border-dark));
+    --scrollbar-track: light-dark(var(--scrollbar-track-light), var(--scrollbar-track-dark));
+    --scrollbar-thumb: light-dark(var(--scrollbar-thumb-light), var(--scrollbar-thumb-dark));
+  }
+
+  /* Editorial Typography Stacks (self-hosted open-source CJK + Latin via 00-fonts.*.css & Inter) */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "HarmonyOS Sans SC", "Noto Sans CJK SC", "Microsoft YaHei",
+    system-ui, sans-serif;
+  --font-serif: "Source Serif 4", "Noto Serif SC", "Source Han Serif SC",
+    "Songti SC", "STSong", Georgia, serif;
+  --font-wenkai: "Source Serif 4", "LXGW WenKai Screen", "Kaiti SC", "STKaiti",
+    Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
+
+  /* Active Reading Font Theme Tokens (default: serif — Claude 出版风) */
+  --font-reading: var(--font-serif);
+  --font-reading-weight: 420;
+  --font-reading-heading-weight: 520;
+  --font-reading-bold-weight: 600;
+  --font-reading-line-height: 1.86;
+  --font-reading-size: 1.04rem;
+
+  /* Measured Spacing, Measure & Geometry (claude.com / anthropic.com / docs) */
+  --sidebar-width: 296px;
+  --ontoc-width: 224px;
+  --measure: 45rem; /* 720px: matches Anthropic --grid-reading-max-width */
+  --topbar-height: 54px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --ease-claude: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Form-factor adaptive touch targets (WCAG 2.5.8 / 2.5.5) */
+  --target-size: 28px;
+
+  accent-color: var(--accent-interactive);
+  /* Do NOT animate or transition scrollbar-color (WebKit flicker bug) */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+@media (pointer: coarse) {
+  :root {
+    --target-size: 44px;
+  }
+}
+
+/* Switchable Reading Font Themes (zero-unused-byte isolation: only active theme's CJK font is referenced) */
+:root[data-font-theme="serif"] {
+  --font-reading: var(--font-serif);
+  --font-reading-weight: 420;
+  --font-reading-heading-weight: 520;
+  --font-reading-bold-weight: 600;
+  --font-reading-line-height: 1.86;
+  --font-reading-size: 1.04rem;
+}
+
+:root[data-font-theme="wenkai"] {
+  --font-reading: var(--font-wenkai);
+  --font-reading-weight: 400;
+  --font-reading-heading-weight: 600;
+  --font-reading-bold-weight: 600;
+  --font-reading-line-height: 1.9;
+  --font-reading-size: 1.0625rem;
+  font-synthesis-weight: auto;
+}
+
+:root[data-font-theme="sans"] {
+  --font-reading: var(--font-sans);
+  --font-reading-weight: 400;
+  --font-reading-heading-weight: 600;
+  --font-reading-bold-weight: 600;
+  --font-reading-line-height: 1.84;
+  --font-reading-size: 1.03125rem;
+}
+
+/* Legacy scrollbar fallback strictly isolated behind @supports not */
+@supports not (scrollbar-color: auto) {
+  :root,
+  .toc-scroll,
+  .table-wrap,
+  .math-block {
+    scrollbar-width: auto;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 5px;
+  }
+}
+
+/* ==========================================================================
+   Base Reset & Editorial Defaults
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Guarantee the HTML hidden attribute always wins over author display utilities */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--topbar-height) + env(safe-area-inset-top, 0px) + 1rem);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  min-block-size: 100svh;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "pnum" on, "lnum" on, "liga" on;
+  font-size: 1.03125rem; /* 16.5px editorial body */
+  line-height: 1.84;
+  text-align: start;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Targeted balanced headings & pretty long-form prose (never on * or bordered boxes) */
+h1,
+h2,
+h3,
+h4,
+th {
+  text-wrap: balance;
+}
+
+#article-body p,
+#article-body blockquote,
+.article-summary,
+.hero-desc {
+  text-wrap: pretty;
+}
+
+/* Visually stable font fallbacks & mixed fonts (modern-web-guidance) */
+h1,
+h2,
+h3,
+.prose {
+  font-size-adjust: from-font;
+}
+
+/* LXGW WenKai Screen has calligraphic CJK proportions; do not rescale by Latin x-height */
+:root[data-font-theme="wenkai"] :is(h1, h2, h3, .prose) {
+  font-size-adjust: none;
+}
+
+/* Preserve KaTeX's exact internal em geometry across all reading font themes */
+.katex,
+.katex-display {
+  font-size-adjust: none;
+}
+
+@supports not (font-size-adjust: from-font) {
+  .prose code {
+    font-size: 0.87em;
+    line-height: 1.6;
+  }
+}
+
+img,
+svg,
+video {
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+:where(code) {
+  overflow-wrap: anywhere;
+}
+
+:where(a) {
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-interactive);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+/* Accessible screen-reader-only utility */
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: -100px;
+  inset-inline-start: 1rem;
+  z-index: 1000;
+  padding: 0.65rem 1rem;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+}
+
+.skip-link:focus-visible {
+  inset-block-start: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+
+/* Interactive controls minimum hit area (inline sentence links exempt) */
+:where(button, .btn, [role="button"], input[type="search"], input[type="text"]) {
+  min-block-size: var(--target-size);
+}
+
+:where(button, .btn, [role="button"]) {
+  min-inline-size: var(--target-size);
+  font: inherit;
+}
+
+:where(button, [role="button"]) {
+  color: inherit;
+}

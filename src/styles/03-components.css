@@ -1,0 +1,2363 @@
+/* ==========================================================================
+   03-components.css — TOC Accordion, Prose, Callouts, Math, Tables, Popover & Toast
+   Follows modern-web-guidance: accordion, viewport-aware-dropdowns,
+   animate-to-from-top-layer, responsive-table, scrollability-affordance-hints,
+   persistent-toast-notifications, selector-atrule-combinations.
+   ========================================================================== */
+
+/* ==========================================================================
+   Buttons & Theme Toggle (selector-atrule-combinations + fallback)
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.48rem 0.95rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s var(--ease-claude), border-color 0.15s var(--ease-claude), color 0.15s var(--ease-claude);
+}
+
+.btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.btn-primary {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-bg-hover);
+  border-color: var(--btn-primary-bg-hover);
+  color: var(--btn-primary-fg);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-sm {
+  padding: 0.3rem 0.72rem;
+  font-size: 0.82rem;
+}
+
+.icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: max(2.25rem, var(--target-size));
+  block-size: max(2.25rem, var(--target-size));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s var(--ease-claude), color 0.15s var(--ease-claude), border-color 0.15s var(--ease-claude);
+}
+
+.icon-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.icon-btn svg {
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+/* Read-state toggle button */
+.read-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.34rem 0.8rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.read-toggle-btn:hover {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.read-toggle-btn[aria-pressed="true"] {
+  background: var(--success-soft);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.read-toggle-btn .read-icon {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+}
+
+/* Theme toggle dual-option visibility (no JS class needed) */
+.theme-toggle .theme-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle .theme-to-light {
+  display: none;
+}
+
+/* Fallback for browsers without @container style() */
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-toggle .theme-to-dark {
+    display: none;
+  }
+
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-toggle .theme-to-light {
+    display: inline-flex;
+  }
+}
+
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .theme-to-dark {
+  display: none;
+}
+
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .theme-to-light {
+  display: inline-flex;
+}
+
+/* Modern single-source container style query per selector-atrule-combinations */
+@container style(--color-scheme: dark) {
+  .theme-toggle .theme-to-dark {
+    display: none;
+  }
+
+  .theme-toggle .theme-to-light {
+    display: inline-flex;
+  }
+}
+
+@container style(--color-scheme: light) {
+  .theme-toggle .theme-to-dark {
+    display: inline-flex;
+  }
+
+  .theme-toggle .theme-to-light {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Progress Meters
+   ========================================================================== */
+
+.progress-track {
+  position: relative;
+  inline-size: 100%;
+  block-size: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  block-size: 100%;
+  inline-size: 0%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--accent-brand), var(--accent-interactive));
+  transition: inline-size 0.25s ease-out;
+}
+
+/* ==========================================================================
+   Sidebar & 3-Level Collapsible TOC (accordion guidance)
+   ========================================================================== */
+
+.toc-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+.toc-progress-box {
+  padding: 0.75rem 1rem 0.65rem;
+  border-block-end: 1px solid var(--border);
+  background: var(--bg-sidebar);
+}
+
+.toc-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block-end: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.toc-progress-count {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.toc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.85rem;
+  border-block-end: 1px solid var(--border);
+}
+
+.search-input-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.search-input-icon {
+  position: absolute;
+  inset-inline-start: 0.65rem;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  inline-size: 100%;
+  padding: 0.4rem 0.65rem 0.4rem 2.05rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:focus-visible {
+  border-color: var(--accent);
+}
+
+/* Priority Badges & Segmented Filter Controls */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.priority-badge[hidden] {
+  display: none;
+}
+
+.priority-badge-core {
+  background: var(--priority-core-bg);
+  color: var(--priority-core);
+  border-color: var(--priority-core-border);
+}
+
+.priority-badge-high {
+  background: var(--priority-high-bg);
+  color: var(--priority-high);
+  border-color: var(--priority-high-border);
+}
+
+.priority-badge-compact {
+  padding: 0.04rem 0.36rem;
+  font-size: 0.68rem;
+  border-radius: 4px;
+}
+
+/* Segmented Priority Filter Bar (TOC Sidebar/Drawer & Home Syllabus/Concepts) */
+.priority-filter-bar {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+}
+
+.toc-priority-wrap {
+  padding: 0.5rem 0.85rem;
+  border-block-end: 1px solid var(--border);
+  background: var(--bg-sidebar);
+}
+
+.toc-priority-wrap .priority-filter-bar {
+  display: flex;
+  inline-size: 100%;
+}
+
+.priority-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex: 1 1 auto;
+  min-block-size: var(--target-size);
+  min-inline-size: var(--target-size);
+  padding: 0.2rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.14s, color 0.14s, border-color 0.14s;
+}
+
+.priority-filter-btn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
+}
+
+.priority-filter-btn[aria-pressed="true"] {
+  background: var(--bg-surface);
+  color: var(--accent);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.priority-filter-btn[data-priority-filter="core"][aria-pressed="true"] {
+  background: var(--priority-core-bg);
+  color: var(--priority-core);
+  border-color: var(--priority-core-border);
+}
+
+.priority-filter-btn[data-priority-filter="important"][aria-pressed="true"] {
+  background: var(--priority-high-bg);
+  color: var(--priority-high);
+  border-color: var(--priority-high-border);
+}
+
+/* Priority indicator dot on concept chips */
+.concept-chip[data-priority="core"] {
+  border-color: var(--priority-core-border);
+}
+
+.concept-chip[data-priority="high"] {
+  border-color: var(--priority-high-border);
+}
+
+.concept-priority-dot {
+  display: inline-block;
+  inline-size: 0.45rem;
+  block-size: 0.45rem;
+  margin-inline-end: 0.35rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.concept-priority-dot-core {
+  background: var(--priority-core);
+}
+
+.concept-priority-dot-high {
+  background: var(--priority-high);
+}
+
+.toc-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.6rem 0.65rem 1.25rem;
+}
+
+.toc-empty-state {
+  margin: 1rem 0.5rem;
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Expand / Collapse All toggle button per accordion guide */
+[command="--toggle-all"][aria-expanded="true"] .label-expand,
+[command="--toggle-all"][aria-expanded="false"] .label-collapse {
+  display: none;
+}
+
+/* Shared Accessible <details>/<summary> Styling */
+.toc-part,
+.toc-chapter,
+.inline-toc,
+.syllabus-part,
+.syllabus-chapter,
+.solution-box {
+  --chevron-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+}
+
+.toc-part > summary,
+.toc-chapter > summary,
+.inline-toc > summary,
+.syllabus-part > summary,
+.syllabus-chapter > summary,
+.solution-box > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+}
+
+.toc-part > summary::-webkit-details-marker,
+.toc-chapter > summary::-webkit-details-marker,
+.inline-toc > summary::-webkit-details-marker,
+.syllabus-part > summary::-webkit-details-marker,
+.syllabus-chapter > summary::-webkit-details-marker,
+.solution-box > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Marker directly before label text for vertical scanning (accordion guidance) */
+.toc-part > summary::before,
+.toc-chapter > summary::before,
+.inline-toc > summary::before,
+.syllabus-part > summary::before,
+.syllabus-chapter > summary::before,
+.solution-box > summary::before {
+  content: "";
+  inline-size: 0.95em;
+  block-size: 0.95em;
+  flex-shrink: 0;
+  background-color: currentColor;
+  mask: var(--chevron-mask) no-repeat center / contain;
+  -webkit-mask: var(--chevron-mask) no-repeat center / contain;
+  rotate: -90deg;
+  opacity: 0.72;
+}
+
+.toc-part[open] > summary::before,
+.toc-chapter[open] > summary::before,
+.inline-toc[open] > summary::before,
+.syllabus-part[open] > summary::before,
+.syllabus-chapter[open] > summary::before,
+.solution-box[open] > summary::before {
+  rotate: 0deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toc-part > summary::before,
+  .toc-chapter > summary::before,
+  .inline-toc > summary::before,
+  .syllabus-part > summary::before,
+  .syllabus-chapter > summary::before,
+  .solution-box > summary::before {
+    transition: rotate 0.18s ease;
+  }
+}
+
+/* Smooth disclosure animation with interpolate-size + constant layout containment */
+:is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box)::details-content {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+
+:is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box):not([open])::details-content {
+  block-size: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box)::details-content {
+    transition-property: block-size, content-visibility, display;
+    transition-duration: 0.24s;
+    transition-timing-function: ease-in-out;
+    transition-behavior: allow-discrete;
+  }
+}
+
+/* Sidebar TOC Hierarchy Visual Levels */
+.toc-part {
+  margin-block-end: 0.35rem;
+}
+
+.toc-part > summary {
+  padding: 0.42rem 0.5rem;
+  min-block-size: var(--target-size);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.toc-part > summary:hover {
+  background: var(--bg-subtle);
+}
+
+.toc-part-badge {
+  margin-inline-start: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.toc-part-body {
+  padding-inline-start: 0.65rem;
+  margin-inline-start: 0.45rem;
+  border-inline-start: 1px solid var(--border);
+}
+
+.toc-chapter {
+  margin-block: 0.15rem;
+}
+
+.toc-chapter > summary {
+  padding: 0.34rem 0.45rem;
+  min-block-size: var(--target-size);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.toc-chapter > summary:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.toc-page-list {
+  list-style: none;
+  margin: 0.1rem 0 0.3rem;
+  padding: 0 0 0 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.toc-page-link {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.34rem 0.5rem;
+  min-block-size: var(--target-size);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  line-height: 1.42;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.toc-page-link .toc-check {
+  margin-block-start: 0;
+}
+
+.toc-page-link:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.toc-page-link[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.toc-check {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin-block-start: 0.15rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  font-size: 0.65rem;
+  line-height: 1;
+  color: transparent;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.toc-page-link.is-read .toc-check,
+.syllabus-page-link.is-read .toc-check {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--accent-contrast);
+}
+
+.toc-page-label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.toc-page-mins {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-block-start: 0.1rem;
+}
+
+.toc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-block-start: 1px solid var(--border);
+  background: var(--bg-surface);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.toc-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target-size);
+}
+
+/* Home Syllabus Accordion Cards */
+.syllabus-part {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.syllabus-part > summary {
+  padding: 0.9rem 1.1rem;
+  min-block-size: var(--target-size);
+  font-family: var(--font-reading);
+  font-size: 1.08rem;
+  font-weight: var(--font-reading-bold-weight);
+  color: var(--text-primary);
+}
+
+.syllabus-part > summary:hover {
+  background: var(--bg-subtle);
+}
+
+.syllabus-part-content {
+  padding: 0.25rem 1.1rem 1rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.syllabus-chapter {
+  margin-block-start: 0.55rem;
+}
+
+.syllabus-chapter > summary {
+  padding: 0.45rem 0.5rem;
+  min-block-size: var(--target-size);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.syllabus-chapter > summary:hover {
+  background: var(--bg-subtle);
+}
+
+.syllabus-page-list {
+  list-style: none;
+  margin: 0.25rem 0 0.4rem;
+  padding: 0 0 0 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.syllabus-page-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-page);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.syllabus-page-link:hover {
+  border-color: var(--accent);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.syllabus-page-info {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.syllabus-page-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.94rem;
+  line-height: 1.4;
+}
+
+.syllabus-page-summary {
+  display: block;
+  margin-block-start: 0.15rem;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.syllabus-page-meta {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding-block-start: 0.1rem;
+}
+
+/* ==========================================================================
+   Editorial Academic Prose Typography
+   ========================================================================== */
+
+.prose {
+  color: var(--text-primary);
+  font-family: var(--font-reading);
+  font-size: var(--font-reading-size);
+  font-weight: var(--font-reading-weight);
+  line-height: var(--font-reading-line-height);
+}
+
+.prose > :first-child {
+  margin-block-start: 0;
+}
+
+.prose > :last-child {
+  margin-block-end: 0;
+}
+
+.prose h2 {
+  position: relative;
+  margin: 2.5rem 0 0.95rem;
+  padding-block-end: 0.45rem;
+  border-block-end: 1px solid var(--border);
+  font-family: var(--font-reading);
+  font-size: 1.5rem;
+  font-weight: var(--font-reading-heading-weight);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.prose h3 {
+  position: relative;
+  margin: 1.9rem 0 0.7rem;
+  font-family: var(--font-reading);
+  font-size: 1.24rem;
+  font-weight: var(--font-reading-heading-weight);
+  letter-spacing: -0.015em;
+  line-height: 1.36;
+  color: var(--text-primary);
+}
+
+.prose h4 {
+  position: relative;
+  margin: 1.4rem 0 0.55rem;
+  font-family: var(--font-reading);
+  font-size: 1.02rem;
+  font-weight: var(--font-reading-bold-weight);
+  color: var(--text-primary);
+}
+
+.prose .heading-anchor {
+  margin-inline-start: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.82em;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.prose :is(h2, h3, h4):hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.prose p {
+  margin: 0 0 1.05rem;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0 0 1.15rem;
+  padding-inline-start: 1.55rem;
+}
+
+.prose li {
+  margin-block: 0.35rem;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-block: 0.3rem 0.2rem;
+}
+
+.prose strong {
+  font-weight: var(--font-reading-bold-weight);
+  color: var(--text-primary);
+}
+
+.prose hr {
+  border: 0;
+  border-block-start: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+.prose blockquote {
+  margin: 1.35rem 0;
+  padding: 0.9rem 1.15rem;
+  border-inline-start: 2.5px solid var(--accent-brand);
+  background: var(--bg-subtle);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-secondary);
+}
+
+.prose blockquote > :last-child {
+  margin-block-end: 0;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 0.12em 0.38em;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+}
+
+.prose pre {
+  margin: 1.25rem 0;
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* ==========================================================================
+   Semantic Callout Boxes (高频考点 / 解题套路 / 易错避坑 / 严谨性勘误)
+   ========================================================================== */
+
+.callout {
+  --callout-color: var(--callout-note);
+  --callout-bg: var(--callout-note-bg);
+  margin: 1.5rem 0;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius-md);
+  background: var(--callout-bg);
+  border: 1px solid color-mix(in srgb, var(--callout-color) 22%, var(--border));
+  border-inline-start: 3px solid var(--callout-color);
+}
+
+.callout-exam {
+  --callout-color: var(--callout-exam);
+  --callout-bg: var(--callout-exam-bg);
+}
+
+.callout-tip {
+  --callout-color: var(--callout-tip);
+  --callout-bg: var(--callout-tip-bg);
+}
+
+.callout-warn {
+  --callout-color: var(--callout-warn);
+  --callout-bg: var(--callout-warn-bg);
+}
+
+.callout-errata {
+  --callout-color: var(--callout-errata);
+  --callout-bg: var(--callout-errata-bg);
+}
+
+.callout-note {
+  --callout-color: var(--callout-note);
+  --callout-bg: var(--callout-note-bg);
+}
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-block-end: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--callout-color);
+  letter-spacing: 0.01em;
+}
+
+.callout-body {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+
+.callout-body > :first-child {
+  margin-block-start: 0;
+}
+
+.callout-body > :last-child {
+  margin-block-end: 0;
+}
+
+/* ==========================================================================
+   Collapsible Self-Check Solution & Hint Boxes (:::solution / :::hint)
+   Follows modern-web-guidance: accordion (no headings inside <summary>).
+   ========================================================================== */
+
+.solution-box {
+  --solution-accent: var(--callout-tip);
+  --solution-tint: var(--callout-tip-bg);
+  margin: 1.1rem 0 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--solution-accent) 24%, var(--border));
+  border-inline-start: 3px solid var(--solution-accent);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  min-inline-size: 0;
+}
+
+.solution-box.solution-hint {
+  --solution-accent: var(--callout-warn);
+  --solution-tint: var(--callout-warn-bg);
+}
+
+.solution-box > summary {
+  padding: 0.65rem 1rem;
+  min-block-size: max(42px, var(--target-size));
+  background: var(--solution-tint);
+  color: var(--solution-accent);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.45;
+  border-radius: calc(var(--radius-md) - 2px);
+  transition: background-color 0.15s;
+}
+
+.solution-box[open] > summary {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--solution-accent) 22%, var(--border));
+}
+
+.solution-box > summary:hover {
+  background: color-mix(in srgb, var(--solution-accent) 14%, var(--bg-surface));
+}
+
+.solution-summary-text,
+.solution-summary-label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.solution-body {
+  padding: 0.95rem 1.15rem 1.1rem;
+  min-inline-size: 0;
+  font-size: 0.96rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+.solution-body > :first-child {
+  margin-block-start: 0;
+}
+
+.solution-body > :last-child {
+  margin-block-end: 0;
+}
+
+.solution-body .math-block,
+.solution-body .table-wrap {
+  margin-block: 0.9rem;
+}
+
+/* ==========================================================================
+   KaTeX Math & Responsive Data Tables + Scrollability Affordance Hints
+   ========================================================================== */
+
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes reveal-inline-fade-start {
+  to {
+    --fade-start: var(--fade-size);
+  }
+}
+
+@keyframes hide-inline-fade-end {
+  from {
+    --fade-end: var(--fade-size);
+  }
+}
+
+/* Inline KaTeX harmonization with CJK text */
+.prose {
+  min-inline-size: 0;
+}
+
+.prose .katex {
+  font-size: 1.05em;
+  line-height: 1.25;
+}
+
+.prose .katex-display .katex {
+  white-space: nowrap;
+}
+
+/* Targeted scroll wrapper emitted only for oversized single-.base inline math */
+.math-inline-scroll {
+  display: inline-block;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: bottom;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Display math container — never widens the page */
+.math-block {
+  position: relative;
+  margin: 1.25rem 0;
+  padding: 0.95rem 1.2rem;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  scroll-padding-inline: 1.5rem;
+}
+
+.math-block .katex-display {
+  margin: 0;
+  display: inline-block;
+  min-inline-size: max-content;
+}
+
+.prose > .katex-display {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.6rem 0.25rem;
+}
+
+/* Responsive Data Table Wrapper (preserves wide structured table/matrix layout) */
+.table-wrap {
+  position: relative;
+  margin: 1.35rem 0;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-block-size: min(560px, 75svh);
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  scroll-padding-inline: 1.5rem;
+}
+
+.table-wrap table {
+  border-collapse: separate;
+  border-spacing: 0;
+  inline-size: 100%;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  line-height: 1.58;
+}
+
+.table-wrap thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+}
+
+.table-wrap th {
+  padding: 0.62rem 0.9rem;
+  text-align: start;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  border-block-end: 1.5px solid var(--border-strong);
+  border-inline-end: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table-wrap td {
+  padding: 0.6rem 0.9rem;
+  vertical-align: top;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border-block-end: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
+  min-inline-size: 5rem;
+  overflow-wrap: break-word;
+}
+
+.table-wrap th:last-child,
+.table-wrap td:last-child {
+  border-inline-end: 0;
+}
+
+.table-wrap tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.table-wrap tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--bg-subtle) 45%, var(--bg-surface));
+}
+
+/* Progressive scroll-driven horizontal edge fade cue (keeps scrollbar visible) */
+@supports (animation-timeline: scroll()) {
+  .math-block,
+  .table-wrap {
+    --fade-size: 1.75rem;
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: reveal-inline-fade-start linear both, hide-inline-fade-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+}
+
+/* ==========================================================================
+   First-Mention Inline Concept Recall Links (.concept-ref)
+   ========================================================================== */
+
+.concept-ref {
+  position: relative;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--concept-line);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.24em;
+  background: var(--concept-bg);
+  padding: 0.08em 0.24em 0.1em;
+  margin-inline: 0.02em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.14s, color 0.14s, text-decoration-color 0.14s;
+}
+
+.concept-ref::after {
+  content: "◦";
+  display: inline-block;
+  margin-inline-start: 0.12em;
+  font-size: 0.72em;
+  vertical-align: super;
+  line-height: 0;
+  opacity: 0.75;
+}
+
+.concept-ref:hover,
+.concept-ref:focus-visible,
+.concept-ref.is-popover-source {
+  background: var(--concept-bg-hover);
+  text-decoration-style: solid;
+  color: var(--accent-hover);
+}
+
+/* ==========================================================================
+   Concept Recall Popover (#concept-popover)
+   Uses Popover API (popover="auto") + CSS Anchor Positioning (@supports-gated)
+   + top-layer @starting-style / separate allow-discrete transition.
+   ========================================================================== */
+
+.recall-card[popover] {
+  inline-size: min(24rem, calc(100dvw - 1.5rem));
+  max-block-size: min(72svh, 28rem);
+  overflow-y: auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+
+  /* Closed / exit state + top-layer transition */
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  /* Separate declaration after transition so older browsers don't drop it */
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .recall-card[popover] {
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.recall-card[popover]:is(:popover-open, .\:popover-open):where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: translateY(0) scale(1);
+
+    @starting-style {
+      transform: translateY(6px) scale(0.98);
+    }
+  }
+}
+
+/* Non-native Popover fallback display rule */
+.recall-card[popover].\:popover-open {
+  display: block;
+  z-index: 200;
+}
+
+/* Gate inset: auto & margin: 0 STRICTLY inside @supports so unsupported browsers
+   do not strand the popover at (0, 0). */
+@media (min-width: 641px) {
+  @supports (position-area: block-end) {
+    .recall-card[popover]:not([data-positioned="js"]) {
+      position-anchor: --active-concept;
+      inset: auto;
+      margin: 0;
+      margin-block: 0.45rem;
+      position-area: block-end span-inline-end;
+      position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+    }
+  }
+}
+
+/* JS viewport-safe positioning fallback (Firefox / older engines) */
+.recall-card[popover][data-positioned="js"] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+}
+
+.recall-card[popover]::backdrop {
+  background-color: transparent;
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recall-card[popover],
+  .recall-card[popover]::backdrop {
+    transition-duration: 0.08s;
+  }
+}
+
+.recall-sheet-handle {
+  display: none;
+}
+
+.recall-card-inner {
+  padding: 1rem 1.15rem 1.1rem;
+}
+
+.recall-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-block-end: 0.55rem;
+}
+
+.recall-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-block-end: 0.35rem;
+}
+
+.recall-category {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.recall-term {
+  margin: 0;
+  font-family: var(--font-reading);
+  font-size: 1.18rem;
+  font-weight: var(--font-reading-heading-weight);
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.recall-brief {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-reading);
+  font-size: 0.94rem;
+  font-weight: var(--font-reading-weight);
+  line-height: 1.74;
+  color: var(--text-secondary);
+}
+
+.recall-brief .katex {
+  font-size: 1.02em;
+}
+
+.recall-formula {
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.recall-formula[hidden] {
+  display: none;
+}
+
+.recall-formula .katex-display {
+  margin: 0;
+}
+
+.recall-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-block-start: 0.7rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.recall-actions #recall-link {
+  max-inline-size: 100%;
+  white-space: normal;
+  text-align: start;
+}
+
+/* ==========================================================================
+   Reading Status Toast (persistent-toast-notifications guidance)
+   Uses popover="manual" inside a labeled region.
+   ========================================================================== */
+
+.toast-region {
+  position: fixed;
+  inset-block-end: max(1rem, env(safe-area-inset-bottom, 0px));
+  inset-inline-end: max(1rem, env(safe-area-inset-right, 0px));
+  z-index: 120;
+  pointer-events: none;
+}
+
+.reading-toast[popover] {
+  position: fixed;
+  inset: auto max(1rem, env(safe-area-inset-right, 0px)) max(1rem, env(safe-area-inset-bottom, 0px)) auto;
+  margin: 0;
+  max-inline-size: min(23rem, calc(100dvw - 2rem));
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.22s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reading-toast[popover] {
+    transform: translateY(8px);
+  }
+}
+
+.reading-toast[popover]:is(:popover-open, .\:popover-open) {
+  display: flex;
+}
+
+.reading-toast[popover]:is(:popover-open, .\:popover-open):where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: translateY(0);
+
+    @starting-style {
+      transform: translateY(8px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-toast[popover] {
+    transition-duration: 0.08s;
+  }
+}
+
+.toast-message {
+  flex: 1 1 11rem;
+  font-weight: 500;
+}
+
+.toast-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-inline-start: auto;
+}
+
+/* ==========================================================================
+   Selection Action Bar (#selection-toolbar, popover="manual")
+   Follows modern-web-guidance: copy-button (step 3) + animate-to-from-top-layer.
+   ========================================================================== */
+
+.selection-toolbar[popover] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  align-items: center;
+  gap: 0.35rem;
+  max-inline-size: calc(100dvw - 1.5rem);
+
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.16s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .selection-toolbar[popover] {
+    transform: translateY(4px) scale(0.97);
+  }
+}
+
+.selection-toolbar[popover]:is(:popover-open, .\:popover-open) {
+  display: flex;
+}
+
+.selection-toolbar[popover]:is(:popover-open, .\:popover-open):where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: translateY(0) scale(1);
+
+    @starting-style {
+      transform: translateY(4px) scale(0.97);
+    }
+  }
+}
+
+.selection-toolbar[popover].\:popover-open {
+  z-index: 220;
+}
+
+.selection-toolbar .btn {
+  border-radius: var(--radius-pill);
+}
+
+.selection-close-btn {
+  border-radius: 50%;
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Highlight pulse when jumping from Notebook to a section on the same page */
+@keyframes heading-jump-pulse {
+  0% {
+    background-color: var(--accent-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.is-jump-highlight {
+  border-radius: var(--radius-sm);
+  animation: heading-jump-pulse 1.8s ease-out;
+}
+
+/* ==========================================================================
+   Notebook Slide-Over Modal Drawer (#notebook-drawer) & Sync Modal (#sync-dialog)
+   Follows modern-web-guidance: dialog, animate-to-from-top-layer, copy-button.
+   Scope display: flex strictly to dialog[open] (never unconditionally on dialog).
+   ========================================================================== */
+
+dialog.notebook-drawer {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  inline-size: min(31rem, 94dvw);
+  block-size: 100svh;
+  max-inline-size: none;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-inline-start: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  flex-direction: column;
+
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.notebook-drawer {
+    transform: translateX(100%);
+  }
+}
+
+dialog.notebook-drawer[open] {
+  display: flex;
+}
+
+dialog.notebook-drawer[open]:where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: translateX(0);
+
+    @starting-style {
+      transform: translateX(100%);
+    }
+  }
+}
+
+dialog.notebook-drawer::backdrop,
+dialog.sync-dialog::backdrop {
+  background-color: rgb(0 0 0 / 0);
+  transition-property: background-color, display, overlay;
+  transition-duration: 0.22s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+dialog.notebook-drawer[open]:where(:not([data-closing]))::backdrop,
+dialog.sync-dialog[open]:where(:not([data-closing]))::backdrop {
+  background-color: rgb(0 0 0 / 0.48);
+
+  @starting-style {
+    background-color: rgb(0 0 0 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.notebook-drawer,
+  dialog.sync-dialog,
+  dialog.notebook-drawer::backdrop,
+  dialog.sync-dialog::backdrop {
+    transition-duration: 0.08s;
+  }
+}
+
+.nb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: calc(0.85rem + env(safe-area-inset-top, 0px)) 1rem 0.85rem;
+  border-block-end: 1px solid var(--border);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.nb-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-inline-size: 0;
+}
+
+.nb-title {
+  margin: 0;
+  font-family: var(--font-reading);
+  font-size: 1.2rem;
+  font-weight: var(--font-reading-heading-weight);
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.nb-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.nb-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-block-end: 1px solid var(--border);
+  background: var(--bg-subtle);
+  flex-shrink: 0;
+}
+
+.nb-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.nb-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nb-page-only-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-block-size: var(--target-size);
+  padding-inline: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.nb-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.nb-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--target-size);
+  padding: 0.14rem 0.58rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.14s, border-color 0.14s, color 0.14s;
+}
+
+.nb-tag-pill[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.nb-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.9rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Composer inside Notebook Drawer */
+.nb-composer {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.nb-composer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.nb-quote-preview,
+.nb-note-quote {
+  padding: 0.65rem 0.85rem;
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--bg-subtle);
+  font-family: var(--font-reading);
+  font-size: 0.92rem;
+  font-weight: var(--font-reading-weight);
+  line-height: 1.7;
+  color: var(--text-primary);
+  overflow-x: auto;
+  max-inline-size: 100%;
+}
+
+.nb-quote-preview .katex,
+.nb-note-quote .katex {
+  font-size: 1.02em;
+}
+
+.nb-textarea,
+.sync-input {
+  inline-size: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.nb-textarea:focus-visible,
+.sync-input:focus-visible {
+  border-color: var(--accent);
+}
+
+.nb-composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+/* Note Cards */
+.nb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nb-card {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.nb-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.nb-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-inline-size: 0;
+}
+
+.nb-tag-chip {
+  display: inline-block;
+  padding: 0.08rem 0.46rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nb-tag-chip[data-tag="必背"] {
+  background: var(--priority-core-bg);
+  color: var(--priority-core);
+}
+
+.nb-tag-chip[data-tag="易错"] {
+  background: var(--callout-warn-bg);
+  color: var(--callout-warn);
+}
+
+.nb-tag-chip[data-tag="疑问"] {
+  background: var(--callout-errata-bg);
+  color: var(--callout-errata);
+}
+
+.nb-tag-chip[data-tag="概念"] {
+  background: var(--callout-tip-bg);
+  color: var(--callout-tip);
+}
+
+.nb-source-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target-size);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.nb-source-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.nb-card-note {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.nb-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-block-start: 0.35rem;
+  border-block-start: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.nb-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nb-empty {
+  padding: 1.75rem 1rem;
+  text-align: center;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+/* ==========================================================================
+   Cloud Sync Modal Dialog (#sync-dialog)
+   ========================================================================== */
+
+dialog.sync-dialog {
+  inline-size: min(30rem, calc(100dvw - 1.5rem));
+  max-block-size: min(86svh, 42rem);
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  flex-direction: column;
+
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.sync-dialog {
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+dialog.sync-dialog[open] {
+  display: flex;
+}
+
+dialog.sync-dialog[open]:where(:not([data-closing])) {
+  opacity: 1;
+
+  @starting-style {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transform: translateY(0) scale(1);
+
+    @starting-style {
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+}
+
+.sync-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem 0.85rem;
+  border-block-end: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sync-dialog-title {
+  margin: 0;
+  font-family: var(--font-reading);
+  font-size: 1.25rem;
+  font-weight: var(--font-reading-heading-weight);
+  letter-spacing: -0.015em;
+}
+
+.sync-dialog-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1.15rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sync-status-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  font-size: 0.84rem;
+}
+
+.sync-status-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+
+.sync-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sync-section-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sync-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.sync-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.sync-code-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.sync-divider {
+  border: 0;
+  border-block-start: 1px solid var(--border);
+  margin: 0.15rem 0;
+}
+
+.btn-danger {
+  border-color: var(--priority-core-border);
+  color: var(--priority-core);
+  background: var(--priority-core-bg);
+}
+
+.btn-danger:hover {
+  border-color: var(--priority-core);
+  color: var(--priority-core);
+}
+
+/* Accessible clipboard status live region (hidden with opacity, never display:none) */
+.copy-status {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--success);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  min-block-size: 1.2em;
+}
+
+.copy-status.is-visible {
+  opacity: 1;
+}
+
+.copy-status.is-error {
+  color: var(--priority-core);
+}
+
+/* ==========================================================================
+   Reading Preferences Bar: Dual Reading-Style ("讲解式 ↔ 公理版")
+   + Triple Editorial Font Switcher ("宋体 | 文楷 | 黑体")
+   Follows modern-web-guidance: accessibility (aria-pressed, quiet live region).
+   ========================================================================== */
+
+.reading-style-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.48rem;
+  margin: 0 0 1.45rem;
+  padding: 0.62rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+}
+
+.reading-style-primary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.9rem;
+}
+
+.reading-style-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  max-inline-size: 100%;
+}
+
+.reading-style-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.reading-style-group {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: 9px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  max-inline-size: 100%;
+}
+
+.reading-style-group-compact {
+  padding: 0.16rem;
+  border-radius: 8px;
+}
+
+.reading-style-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-block-size: var(--target-size);
+  min-inline-size: var(--target-size);
+  padding: 0.22rem 0.78rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-claude), color 0.15s var(--ease-claude), box-shadow 0.15s var(--ease-claude), border-color 0.15s var(--ease-claude);
+}
+
+.font-theme-group .font-theme-btn {
+  padding-inline: 0.66rem;
+}
+
+.reading-style-group-compact .reading-style-btn {
+  padding: 0.16rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.reading-style-group-compact.font-theme-group .font-theme-btn {
+  padding-inline: 0.52rem;
+}
+
+.reading-style-btn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-surface) 55%, transparent);
+}
+
+.reading-style-btn[aria-pressed="true"] {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.reading-style-btn[aria-pressed="true"]::before {
+  content: "";
+  inline-size: 0.42rem;
+  block-size: 0.42rem;
+  border-radius: 50%;
+  background: var(--accent-brand);
+  flex-shrink: 0;
+}
+
+.reading-style-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem 0.5rem;
+  min-inline-size: 0;
+}
+
+.reading-style-bar-single .reading-style-meta {
+  flex: 1 1 13rem;
+  justify-content: flex-end;
+}
+
+.reading-style-bar-single .reading-style-status {
+  margin-inline-start: 0;
+}
+
+.reading-prefs-sep {
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.reading-style-hint {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.reading-style-status {
+  margin-inline-start: auto;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.16s var(--ease-claude);
+  min-block-size: 1.15em;
+}
+
+.reading-style-status.is-visible {
+  opacity: 1;
+}
+
+.reading-style-status.is-error {
+  color: var(--priority-core);
+}
+
+/* Home topbar global reading-style switcher */
+.home-style-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.home-style-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Home Reading Preferences Strip (desktop: font theme; <=760px: style + font theme)
+   Keeps .home-topbar strictly single-row from 320px to 1920px with zero duplicate controls. */
+.home-prefs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.48rem 0.9rem;
+  margin-block-end: 1.55rem;
+  padding: 0.48rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+}
+
+.home-prefs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  min-inline-size: 0;
+}
+
+.home-prefs-style-wrap {
+  display: none;
+}
+
+.home-prefs-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem 0.65rem;
+  min-inline-size: 0;
+  flex: 1 1 13rem;
+}
+
+.home-prefs-meta .reading-style-status {
+  margin-inline-start: 0;
+}
+
+/* Gentle anti-FOUC pending state when user prefers axiomatic mode */
+@keyframes reading-style-safety-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+.page-article #article-body {
+  transition: opacity 0.18s var(--ease-claude);
+}
+
+html[data-reading-style="axiomatic"][data-reading-style-pending="true"] .page-article #article-body {
+  opacity: 0.24;
+  animation: reading-style-safety-reveal 0s linear 1.8s forwards;
+}
+
+.page-article #article-body[data-switching="true"] {
+  opacity: 0.48;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-article #article-body {
+    transition-duration: 0.01s;
+  }
+}

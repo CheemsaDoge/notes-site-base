@@ -1,0 +1,49 @@
+{
+  "site": {
+    "title": "数学分析与线代示例讲义",
+    "shortTitle": "示例讲义",
+    "subtitle": "Interactive Study Notes Starter",
+    "description": "基于 notes-site-base 搭建的交互式微课讲义示例站：支持构建时 KaTeX 渲染、双模式阅读切换、三档阅读字体、概念速览卡与划词笔记本。",
+    "brandMark": "N",
+    "heroBadge": "交互式分层讲义 · 概念速览 · 划词笔记 · 云端同步",
+    "footerNote": "纯静态离线友好学习站",
+    "exportPrefix": "示例讲义",
+    "lang": "zh-CN"
+  },
+  "storage": {
+    "prefix": "course-demo:v1",
+    "themeKey": "course-demo-color-scheme",
+    "syncHashPrefix": "course-demo-sync-v1:"
+  },
+  "features": {
+    "dualReadingStyle": true,
+    "defaultReadingStyle": "explained",
+    "defaultFontTheme": "serif",
+    "readingStyleLabels": {
+      "explained": "讲解式",
+      "axiomatic": "公理版",
+      "explainedHint": "从直觉与例子出发循序推导",
+      "axiomaticHint": "精简定义与考纲标准证明"
+    },
+    "styleAudit": {
+      "forbidEmDash": true
+    }
+  },
+  "paths": {
+    "dataDir": "data",
+    "contentDir": "content",
+    "explainedDir": "content-explained",
+    "outDir": "dist",
+    "extraStyles": []
+  },
+  "concepts": {
+    "nonNegatedTerms": ["连续函数", "线性变换"],
+    "inertCompoundBlockers": ["非连续函数", "非线性变换"]
+  },
+  "examOverview": {
+    "groupLabels": {
+      "C": "微积分",
+      "L": "线性代数"
+    }
+  }
+}

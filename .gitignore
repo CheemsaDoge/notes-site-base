@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.cloudflare/
+.wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+*.tgz
+starter/node_modules/
+starter/dist/
+starter/.cloudflare/
+.DS_Store
+*.log

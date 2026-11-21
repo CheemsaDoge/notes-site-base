@@ -1,0 +1,554 @@
+/* ==========================================================================
+   04-mobile.css — Mobile Top Bar, Swipeable Native <dialog> TOC Drawer,
+   Bottom-Sheet Recall Card & Small-Viewport Polish
+   Follows modern-web-guidance: navigation-drawer,
+   prevent-page-scroll-under-modal-dialog, form-factor-adaptation.
+   ========================================================================== */
+
+/* ==========================================================================
+   Native Modal <dialog> Navigation Drawer (swipe-to-dismiss scroll-snap)
+   ========================================================================== */
+
+.toc-drawer {
+  /* Leaves a visible peek on phones so users see they can tap outside */
+  --drawer-width: min(21rem, 84dvw, 100dvw - 28px);
+  --drawer-backdrop: 0;
+
+  /* Reset UA modal dialog constraints so swipe surface spans edge to edge */
+  inset: 0;
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  /* Must be hidden (not visible/clip) so dialog:modal establishes a scroll container
+     for overscroll-behavior: contain per prevent-page-scroll-under-modal-dialog. */
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+/* prevent-page-scroll-under-modal-dialog: contain scroll on dialog & backdrop */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.toc-drawer::backdrop {
+  background: #000000;
+  opacity: calc(var(--drawer-backdrop) * 0.52);
+}
+
+.toc-drawer-scroller {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--drawer-width) 100%;
+  overflow-x: scroll;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toc-drawer-scroller {
+    scroll-behavior: smooth;
+  }
+}
+
+.toc-drawer-scroller::after {
+  content: "";
+  scroll-snap-align: end;
+  scroll-initial-target: nearest;
+}
+
+.toc-drawer-sheet {
+  display: flex;
+  flex-direction: column;
+  /* Use svh (not vh/dvh) so iOS Safari address bar resizing doesn't jump mid-swipe */
+  block-size: 100svh;
+  padding-block-start: env(safe-area-inset-top, 0px);
+  padding-block-end: env(safe-area-inset-bottom, 0px);
+  padding-inline-start: env(safe-area-inset-left, 0px);
+  background: var(--bg-sidebar);
+  color: var(--text-primary);
+  border-inline-end: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.toc-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-block-end: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.toc-drawer-slot {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+/* Register --drawer-backdrop at top level so Chromium/Safari/Firefox parse @property reliably;
+   keep animation registration strictly inside @supports (animation-timeline: scroll()) so
+   unsupported browsers don't apply 0% (--drawer-backdrop: 1) permanently. */
+@property --drawer-backdrop {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@supports (animation-timeline: scroll()) {
+  @keyframes fade-drawer-backdrop {
+    0% {
+      --drawer-backdrop: 1;
+    }
+    100% {
+      --drawer-backdrop: 0;
+    }
+  }
+
+  .toc-drawer {
+    timeline-scope: --drawer-fade;
+    animation: fade-drawer-backdrop linear both;
+    animation-timeline: --drawer-fade;
+  }
+
+  .toc-drawer-scroller {
+    scroll-timeline: --drawer-fade x;
+  }
+}
+
+/* ==========================================================================
+   Tablet & Mobile Breakpoint (<= 960px)
+   ========================================================================== */
+
+@media (max-width: 960px) {
+  .app-shell {
+    display: block;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  /* Compact Sticky Mobile Top Bar */
+  .mobile-topbar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-block-size: calc(var(--topbar-height) + env(safe-area-inset-top, 0px));
+    padding-block-start: env(safe-area-inset-top, 0px);
+    padding-inline-start: max(0.65rem, env(safe-area-inset-left, 0px));
+    padding-inline-end: max(0.65rem, env(safe-area-inset-right, 0px));
+    background: color-mix(in srgb, var(--bg-page) 88%, transparent);
+    backdrop-filter: blur(12px);
+    border-block-end: 1px solid var(--border);
+  }
+
+  .mobile-topbar-crumb {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  .mobile-crumb-part {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-crumb-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-progress-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.16rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.74rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .page-main {
+    padding: 1.35rem max(1rem, env(safe-area-inset-right, 0px)) 3.75rem max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  .home-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    margin-block-end: 2rem;
+  }
+
+  .exam-blocks-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ==========================================================================
+   Phone Viewport Refinements (<= 640px)
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  :root,
+  :root[data-font-theme="serif"],
+  :root[data-font-theme="sans"] {
+    --font-reading-size: 1rem;
+    --font-reading-line-height: 1.82;
+  }
+
+  :root[data-font-theme="wenkai"] {
+    --font-reading-size: 1.03125rem;
+    --font-reading-line-height: 1.86;
+  }
+
+  body {
+    font-size: 1rem; /* Crisp 16px mobile body */
+    line-height: 1.8;
+  }
+
+  .prose {
+    font-size: var(--font-reading-size);
+    line-height: var(--font-reading-line-height);
+  }
+
+  .prose :is(ul, ol) {
+    padding-inline-start: 1.15rem;
+  }
+
+  .prose h2 {
+    font-size: 1.28rem;
+    margin-block-start: 1.9rem;
+  }
+
+  .prose h3 {
+    font-size: 1.1rem;
+  }
+
+  .article-title {
+    font-size: 1.52rem;
+  }
+
+  /* Generous mobile tap target on inline concept refs without breaking text flow */
+  .concept-ref {
+    padding-block: 0.18em;
+    padding-inline: 0.26em;
+  }
+
+  .math-block {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .table-wrap th,
+  .table-wrap td {
+    padding: 0.5rem 0.72rem;
+    font-size: 0.86rem;
+  }
+
+  .callout {
+    padding: 0.85rem 0.95rem;
+  }
+
+  .solution-box > summary {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .solution-body {
+    padding: 0.8rem 0.9rem 0.95rem;
+    font-size: 0.94rem;
+  }
+
+  .exam-sprint-banner {
+    padding: 1.05rem 1rem;
+    margin-block-end: 1.85rem;
+  }
+
+  .exam-quick-row {
+    align-items: flex-start;
+  }
+
+  .exam-quick-group-label {
+    padding-block-start: 0.45rem;
+  }
+
+  .pager-nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pager-card-placeholder {
+    display: none;
+  }
+
+  .pager-card-next {
+    text-align: start;
+    align-items: flex-start;
+  }
+
+  .home-main {
+    padding: 1.45rem max(0.95rem, env(safe-area-inset-right, 0px)) 3.5rem max(0.95rem, env(safe-area-inset-left, 0px));
+  }
+
+  .home-topbar-inner {
+    padding: 0.45rem max(0.75rem, env(safe-area-inset-right, 0px)) 0.45rem max(0.75rem, env(safe-area-inset-left, 0px));
+    gap: 0.5rem;
+  }
+
+  .home-topbar .brand-subtitle {
+    display: none;
+  }
+
+  .home-topbar .brand-title {
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .home-topbar-actions {
+    gap: 0.35rem;
+  }
+
+  .home-topbar-actions .btn-sm {
+    padding-inline: 0.52rem;
+    font-size: 0.78rem;
+  }
+
+  .mobile-progress-pill {
+    display: none;
+  }
+
+  /* Compact icon-only notebook/sync buttons on narrow screens */
+  .topbar-tool-label {
+    display: none;
+  }
+
+  /* Full-screen notebook drawer & edge-safe sync modal on phones */
+  dialog.notebook-drawer {
+    inline-size: 100dvw;
+    border-inline-start: 0;
+  }
+
+  dialog.sync-dialog {
+    inline-size: calc(100dvw - 1rem);
+    max-block-size: 88svh;
+  }
+
+  .parts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .syllabus-page-list {
+    padding-inline-start: 0.5rem;
+  }
+
+  /* Mobile Bottom-Sheet Presentation for Concept Recall Popover */
+  .recall-card[popover],
+  .recall-card[popover][data-positioned="js"] {
+    position: fixed;
+    inset: auto 0 0 0;
+    inline-size: 100%;
+    max-inline-size: none;
+    max-block-size: 78svh;
+    margin: 0;
+    border-inline: 0;
+    border-block-end: 0;
+    border-radius: 18px 18px 0 0;
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .recall-card[popover] {
+      transform: translateY(100%);
+    }
+
+    .recall-card[popover]:is(:popover-open, .\:popover-open):where(:not([data-closing])) {
+      transform: translateY(0);
+
+      @starting-style {
+        transform: translateY(100%);
+      }
+    }
+  }
+
+  .recall-card[popover]:is(:popover-open, .\:popover-open):where(:not([data-closing]))::backdrop {
+    background-color: rgb(0 0 0 / 0.45);
+
+    @starting-style {
+      background-color: transparent;
+    }
+  }
+
+  .recall-sheet-handle {
+    display: block;
+    inline-size: 2.5rem;
+    block-size: 4px;
+    margin: 0.55rem auto 0.1rem;
+    border-radius: var(--radius-pill);
+    background: var(--border-strong);
+  }
+
+  .recall-card-inner {
+    padding: 0.75rem 1.05rem 1.15rem;
+  }
+
+  /* Bottom-centered toast above safe-area on small phones */
+  .reading-toast[popover] {
+    inset: auto 0.75rem max(0.75rem, env(safe-area-inset-bottom, 0px)) 0.75rem;
+    max-inline-size: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .home-style-label {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-topbar .home-style-switcher {
+    display: none;
+  }
+
+  .home-prefs-bar {
+    margin-block-end: 1.15rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .home-prefs-style-wrap {
+    display: inline-flex;
+  }
+
+  .home-prefs-meta {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .reading-style-bar {
+    padding: 0.55rem 0.75rem;
+    margin-block-end: 1.2rem;
+  }
+
+  .reading-style-primary-row {
+    gap: 0.45rem 0.75rem;
+  }
+
+  .reading-style-meta,
+  .reading-style-bar-single .reading-style-meta {
+    justify-content: flex-start;
+  }
+
+  .reading-style-status {
+    margin-inline-start: 0;
+  }
+
+  .font-theme-group .font-theme-btn {
+    padding-inline: 0.5rem;
+  }
+}
+
+@media (max-width: 440px) {
+  .home-topbar-actions a[href="#syllabus-section"],
+  .home-topbar-actions a[href="#exam-sprint"],
+  .mobile-topbar [data-open-sync] {
+    display: none;
+  }
+}
+
+/* Mobile & touch selection action bar docks above safe-area so it NEVER
+   collides with iOS / Android native Copy/Lookup selection menus, and inputs
+   stay >= 16px so iOS Safari never auto-zooms modal dialogs. */
+@media (max-width: 640px), (pointer: coarse) {
+  .search-input,
+  .nb-textarea,
+  .sync-input {
+    font-size: 1rem;
+  }
+
+  .selection-toolbar[popover] {
+    position: fixed;
+    inset: auto 0.75rem max(0.75rem, env(safe-area-inset-bottom, 0px)) 0.75rem;
+    margin-inline: auto;
+    inline-size: fit-content;
+    justify-content: center;
+    padding: 0.4rem 0.55rem;
+  }
+}
+
+/* ==========================================================================
+   Print Stylesheet (Clean Textbook Printing)
+   ========================================================================== */
+
+@media print {
+  .reading-progress,
+  .sidebar,
+  .mobile-topbar,
+  .ontoc-aside,
+  .inline-toc,
+  .toc-drawer,
+  .recall-card,
+  .reading-toast,
+  .selection-toolbar,
+  .notebook-drawer,
+  .sync-dialog,
+  .article-completion-strip,
+  .reading-style-bar,
+  .home-style-switcher,
+  .home-prefs-bar,
+  .pager-nav,
+  .theme-toggle,
+  .read-toggle-btn {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block;
+  }
+
+  .page-main {
+    max-inline-size: none;
+    padding: 0;
+  }
+
+  .concept-ref {
+    background: transparent;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .concept-ref::after {
+    content: none;
+  }
+
+  .solution-box {
+    break-inside: avoid;
+  }
+}

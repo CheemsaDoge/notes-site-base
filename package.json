@@ -1,0 +1,60 @@
+{
+  "name": "notes-site-base",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CheemsaDoge/notes-site-base.git"
+  },
+  "description": "Reusable static study-notes site generator & editorial theme base: build-time KaTeX, self-hosted CJK+Latin reading typography, dual/single reading modes, first-mention concept recall cards, highlight notebook, and optional Cloudflare Workers + D1 sync.",
+  "keywords": [
+    "static-site-generator",
+    "study-notes",
+    "katex",
+    "markdown",
+    "cjk-typography",
+    "cloudflare-workers"
+  ],
+  "bin": {
+    "notes-site": "./bin/notes-site.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs",
+    "./build": "./scripts/build.mjs",
+    "./verify": "./scripts/verify-build.mjs",
+    "./config": "./src/config.mjs",
+    "./worker": "./src/worker/index.mjs",
+    "./worker/merge": "./src/worker/merge.mjs",
+    "./worker/sanitizer": "./src/worker/sanitizer.mjs",
+    "./prepare-deploy": "./src/worker/prepare-deploy.mjs"
+  },
+  "files": [
+    "bin/",
+    "migrations/",
+    "scripts/",
+    "!scripts/test-*.mjs",
+    "src/",
+    "!src/worker/test-*.mjs",
+    "starter/",
+    "LICENSE",
+    "THIRD_PARTY_LICENSES.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test:worker": "node src/worker/test-worker.mjs",
+    "test:smoke": "node scripts/test-smoke.mjs",
+    "test": "npm run test:worker && npm run test:smoke"
+  },
+  "dependencies": {
+    "@fontsource-variable/noto-serif-sc": "^5.3.1",
+    "@fontsource-variable/source-serif-4": "^5.3.1",
+    "cheerio": "^1.0.0",
+    "katex": "^0.16.22",
+    "lxgw-wenkai-screen-webfont": "^1.7.0",
+    "markdown-it": "^14.1.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "course-demo-notes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "课程讲义示例站 — built on notes-site-base",
+  "scripts": {
+    "build": "notes-site build",
+    "verify": "notes-site verify",
+    "check": "notes-site check",
+    "prepare-deploy": "notes-site prepare-deploy"
+  },
+  "dependencies": {
+    "notes-site-base": "github:CheemsaDoge/notes-site-base"
+  }
+}
