@@ -1562,7 +1562,6 @@
     const popover = document.getElementById('concept-popover');
     if (!popover) return;
 
-    hideRecallPopoverFn = () => hidePopoverAnimated(popover);
     scheduleConceptPrefetch();
 
     const categoryEl = document.getElementById('recall-category');
@@ -1575,14 +1574,105 @@
     const closeIconBtn = document.getElementById('recall-close-icon');
 
     let activeTrigger = null;
+    let exitingAnchorEl = null;
+    let anchorCleanupSeq = 0;
+    let anchorCleanupTimer = null;
+    let anchorCleanupRemoveListeners = null;
     let openRequestId = 0;
 
-    function clearAnchorState() {
-      if (activeTrigger) {
-        activeTrigger.classList.remove('is-popover-source');
-        activeTrigger.style.anchorName = '';
-      }
+    function isPopoverOpenNow() {
+      return hasNativePopover
+        ? popover.matches(':popover-open')
+        : popover.classList.contains(':popover-open');
     }
+
+    function flushExitingAnchor(keepEl = null) {
+      anchorCleanupSeq += 1;
+      if (anchorCleanupTimer) {
+        clearTimeout(anchorCleanupTimer);
+        anchorCleanupTimer = null;
+      }
+      if (anchorCleanupRemoveListeners) {
+        anchorCleanupRemoveListeners();
+        anchorCleanupRemoveListeners = null;
+      }
+      if (exitingAnchorEl && exitingAnchorEl !== keepEl) {
+        exitingAnchorEl.style.anchorName = '';
+      }
+      exitingAnchorEl = null;
+    }
+
+    function scheduleAnchorCleanup(triggerEl) {
+      flushExitingAnchor(triggerEl);
+      if (!triggerEl) return;
+
+      exitingAnchorEl = triggerEl;
+      const mySeq = ++anchorCleanupSeq;
+
+      const finalize = () => {
+        if (anchorCleanupTimer) {
+          clearTimeout(anchorCleanupTimer);
+          anchorCleanupTimer = null;
+        }
+        if (anchorCleanupRemoveListeners) {
+          anchorCleanupRemoveListeners();
+          anchorCleanupRemoveListeners = null;
+        }
+        if (anchorCleanupSeq !== mySeq) return;
+        if (exitingAnchorEl === triggerEl) {
+          exitingAnchorEl = null;
+        }
+        if (triggerEl !== activeTrigger) {
+          triggerEl.style.anchorName = '';
+        }
+      };
+
+      // Wait one frame so Chrome commits closed styles & registers CSSTransition
+      // before inspecting getAnimations() or computed display.
+      requestAnimationFrame(() => {
+        if (anchorCleanupSeq !== mySeq) return;
+
+        const anims =
+          typeof popover.getAnimations === 'function' ? popover.getAnimations() : [];
+        if (anims.length > 0) {
+          anchorCleanupTimer = setTimeout(finalize, 400);
+          Promise.allSettled(anims.map((a) => a.finished)).then(finalize);
+          return;
+        }
+
+        const display =
+          typeof window.getComputedStyle === 'function'
+            ? window.getComputedStyle(popover).display
+            : 'none';
+        if (display !== 'none') {
+          const onEnd = (event) => {
+            if (event.target === popover) finalize();
+          };
+          popover.addEventListener('transitionend', onEnd);
+          popover.addEventListener('transitioncancel', onEnd);
+          anchorCleanupRemoveListeners = () => {
+            popover.removeEventListener('transitionend', onEnd);
+            popover.removeEventListener('transitioncancel', onEnd);
+          };
+          anchorCleanupTimer = setTimeout(finalize, 280);
+          return;
+        }
+
+        finalize();
+      });
+    }
+
+    hideRecallPopoverFn = ({ freezePosition = false } = {}) => {
+      if (freezePosition && isPopoverOpenNow() && !sheetViewportMql.matches) {
+        const rect = popover.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          popover.dataset.positioned = 'js';
+          popover.style.top = `${Math.round(rect.top)}px`;
+          popover.style.left = `${Math.round(rect.left)}px`;
+        }
+      }
+      return hidePopoverAnimated(popover);
+    };
 
     function positionWithJsFallback(triggerEl) {
       popover.dataset.positioned = 'js';
@@ -1633,7 +1723,11 @@
         return;
       }
 
-      clearAnchorState();
+      flushExitingAnchor(triggerEl);
+      if (activeTrigger && activeTrigger !== triggerEl) {
+        activeTrigger.classList.remove('is-popover-source');
+        activeTrigger.style.anchorName = '';
+      }
       activeTrigger = triggerEl;
       activeConceptRecord = concept;
       activeTrigger.classList.add('is-popover-source');
@@ -1680,6 +1774,7 @@
         delete popover.dataset.positioned;
         popover.style.top = '';
         popover.style.left = '';
+        triggerEl.style.anchorName = '';
       } else if (supportsAnchorArea && hasNativePopover) {
         delete popover.dataset.positioned;
         popover.style.top = '';
@@ -1687,6 +1782,7 @@
         triggerEl.style.anchorName = '--active-concept';
       } else {
         popover.dataset.positioned = 'js';
+        triggerEl.style.anchorName = '';
       }
 
       document.dispatchEvent(new CustomEvent('notes:overlay-open', { detail: { source: 'concept-popover' } }));
@@ -1707,9 +1803,12 @@
     function onPopoverClosed() {
       if (hasNativePopover && popover.matches(':popover-open')) return;
       const previous = activeTrigger;
-      clearAnchorState();
+      if (previous) {
+        previous.classList.remove('is-popover-source');
+      }
       activeTrigger = null;
       activeConceptRecord = null;
+      scheduleAnchorCleanup(previous);
       if (
         previous &&
         document.contains(previous) &&
@@ -1796,11 +1895,12 @@
 
     // Re-sync anchor/sheet/JS positioning on resize, orientation change, and inner scroll (e.g. .table-wrap)
     const syncJsPosition = () => {
-      if (!activeTrigger) return;
-      const isOpen = hasNativePopover
-        ? popover.matches(':popover-open')
-        : popover.classList.contains(':popover-open');
-      if (!isOpen) return;
+      if (!activeTrigger) {
+        if (sheetViewportMql.matches) flushExitingAnchor(null);
+        return;
+      }
+      if (!isPopoverOpenNow()) return;
+      flushExitingAnchor(activeTrigger);
       if (sheetViewportMql.matches) {
         delete popover.dataset.positioned;
         popover.style.top = '';
@@ -2688,7 +2788,7 @@
       }
 
       // Close floating concept card & selection toolbar to prevent ghost anchors
-      hideRecallPopoverFn();
+      hideRecallPopoverFn({ freezePosition: true });
       document.dispatchEvent(
         new CustomEvent('notes:overlay-open', {
           detail: { source: 'reading-style-switch' },
@@ -3078,7 +3178,7 @@
       return hasNativePopover ? p.matches(':popover-open') : p.classList.contains(':popover-open');
     },
     getActiveConcept: () => activeConceptRecord,
-    hideRecallPopover: () => hideRecallPopoverFn(),
+    hideRecallPopover: (opts) => hideRecallPopoverFn(opts),
   };
 
   window.NotesSiteApp = siteAppApi;
