@@ -31,28 +31,32 @@ const md = new MarkdownIt({
 });
 
 /**
- * Custom markdown-it block container for collapsible self-check solutions & hints:
- *   :::solution [Optional Summary Title]
- *   ...full Markdown, KaTeX, lists, tables, callouts...
- *   :::
- * Also supports `:::hint [Optional Title]`.
+ * Custom markdown-it block containers for structured study notes:
+ *   :::solution [Optional Summary Title]  -> <details class="solution-box">
+ *   :::hint [Optional Summary Title]      -> <details class="solution-box solution-hint">
+ *   :::key [Optional Title]               -> <section class="key-points"> (always visible)
+ *   :::proof [Optional Summary Title]     -> <details class="detail-box detail-proof">
+ *   :::detail [Optional Summary Title]    -> <details class="detail-box">
  */
+const CONTAINER_OPEN_RE = /^(:{3,})\s*(solution|hint|key|proof|detail)(?:\s+(.*))?$/i;
+
 md.block.ruler.before("fence", "solution_container", (state, startLine, endLine, silent) => {
   const startPos = state.bMarks[startLine] + state.tShift[startLine];
   const maxPos = state.eMarks[startLine];
   if (state.sCount[startLine] - state.blkIndent >= 4) return false;
 
   const firstLine = state.src.slice(startPos, maxPos).trim();
-  const openMatch = firstLine.match(/^(:{3,})\s*(solution|hint)(?:\s+(.*))?$/i);
+  const openMatch = firstLine.match(CONTAINER_OPEN_RE);
   if (!openMatch) return false;
 
   const markerLen = openMatch[1].length;
   const kind = openMatch[2].toLowerCase();
   const rawTitle = (openMatch[3] || "").trim();
 
-  // Scan forward for matching closing `:::` line (ignoring nested fenced code blocks)
+  // Scan forward for matching closing `:::` line (ignoring nested fenced code blocks & nested containers)
   let nextLine = startLine + 1;
   let foundClose = false;
+  let depth = 0;
   let inCodeFence = false;
   let codeFenceChar = "";
   let codeFenceLen = 0;
@@ -83,18 +87,26 @@ md.block.ruler.before("fence", "solution_container", (state, startLine, endLine,
       continue;
     }
 
-    if (
-      state.sCount[nextLine] - state.blkIndent < 4 &&
-      trimmed.length >= markerLen &&
-      /^:+$/.test(trimmed)
-    ) {
-      foundClose = true;
-      break;
+    if (state.sCount[nextLine] - state.blkIndent < 4) {
+      if (CONTAINER_OPEN_RE.test(trimmed)) {
+        depth++;
+        nextLine++;
+        continue;
+      }
+      if (trimmed.length >= markerLen && /^:+$/.test(trimmed)) {
+        if (depth > 0) {
+          depth--;
+          nextLine++;
+          continue;
+        }
+        foundClose = true;
+        break;
+      }
     }
     nextLine++;
   }
 
-  // Require an explicit closing fence so unclosed :::solution is caught by verify-build
+  // Require an explicit closing fence so unclosed containers are caught by verify-build
   if (!foundClose) return false;
   if (silent) return true;
 
@@ -103,20 +115,28 @@ md.block.ruler.before("fence", "solution_container", (state, startLine, endLine,
   state.parentType = "container";
   state.lineMax = nextLine;
 
-  const openToken = state.push("solution_open", "details", 1);
+  const tag = kind === "key" ? "section" : "details";
+  let defaultTitle = "";
+  if (kind === "solution") defaultTitle = "查看参考解答";
+  else if (kind === "hint") defaultTitle = "查看解题提示";
+  else if (kind === "proof") defaultTitle = "展开完整证明";
+  else if (kind === "detail") defaultTitle = "展开详细推导";
+
+  const openToken = state.push("solution_open", tag, 1);
   openToken.markup = openMatch[1];
   openToken.block = true;
   openToken.map = [startLine, nextLine + 1];
   openToken.meta = {
     kind,
-    title: rawTitle || (kind === "hint" ? "查看解题提示" : "查看参考解答"),
+    title: rawTitle || defaultTitle,
   };
 
   state.md.block.tokenize(state, startLine + 1, nextLine);
 
-  const closeToken = state.push("solution_close", "details", -1);
+  const closeToken = state.push("solution_close", tag, -1);
   closeToken.markup = openMatch[1];
   closeToken.block = true;
+  closeToken.meta = { kind };
 
   state.parentType = oldParent;
   state.lineMax = oldLineMax;
@@ -126,8 +146,25 @@ md.block.ruler.before("fence", "solution_container", (state, startLine, endLine,
 
 md.renderer.rules.solution_open = (tokens, idx) => {
   const { kind, title } = tokens[idx].meta || { kind: "solution", title: "查看参考解答" };
+  const titleHtml = title ? md.renderInline(title) : "";
+
+  if (kind === "key") {
+    const titleBlock = titleHtml
+      ? `<div class="key-points-title">${titleHtml}</div>\n`
+      : "";
+    return `<section class="key-points">\n${titleBlock}<div class="key-points-body">\n`;
+  }
+
+  if (kind === "proof" || kind === "detail") {
+    const extraClass = kind === "proof" ? " detail-proof" : "";
+    return (
+      `<details class="detail-box${extraClass}">\n` +
+      `<summary class="detail-summary"><span class="detail-summary-label">${titleHtml}</span></summary>\n` +
+      `<div class="detail-body">\n`
+    );
+  }
+
   const extraClass = kind === "hint" ? " solution-hint" : "";
-  const titleHtml = md.renderInline(title);
   return (
     `<details class="solution-box${extraClass}">\n` +
     `<summary class="solution-summary"><span class="solution-summary-label">${titleHtml}</span></summary>\n` +
@@ -135,7 +172,13 @@ md.renderer.rules.solution_open = (tokens, idx) => {
   );
 };
 
-md.renderer.rules.solution_close = () => "\n</div>\n</details>\n";
+md.renderer.rules.solution_close = (tokens, idx) => {
+  const kind = tokens[idx]?.meta?.kind || "solution";
+  if (kind === "key") {
+    return "\n</div>\n</section>\n";
+  }
+  return "\n</div>\n</details>\n";
+};
 
 function parseCliArgs(argv) {
   const opts = {};
@@ -764,7 +807,7 @@ export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle
     }
   });
 
-  // 4c. Normalize any raw HTML <details class="solution-box"> blocks
+  // 4c. Normalize any raw HTML <details class="solution-box"> and <details class="detail-box"> blocks
   $("details.solution-box").each((_, el) => {
     const $details = $(el);
     let $summary = $details.children("summary").first();
@@ -795,6 +838,37 @@ export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle
     }
   });
 
+  $("details.detail-box").each((_, el) => {
+    const $details = $(el);
+    const defaultLabel = $details.hasClass("detail-proof") ? "展开完整证明" : "展开详细推导";
+    let $summary = $details.children("summary").first();
+    if ($summary.length === 0) {
+      $summary = $(
+        `<summary class="detail-summary"><span class="detail-summary-label">${defaultLabel}</span></summary>`
+      );
+      $details.prepend($summary);
+    } else {
+      if (!$summary.hasClass("detail-summary")) $summary.addClass("detail-summary");
+      if ($summary.children(".detail-summary-label").length === 0) {
+        $summary.html(
+          `<span class="detail-summary-label">${($summary.html() || "").trim() || defaultLabel}</span>`
+        );
+      }
+    }
+
+    if ($details.children(".detail-body").length === 0) {
+      const bodyNodes = $details
+        .contents()
+        .toArray()
+        .filter((n) => n !== $summary[0]);
+      const $body = $('<div class="detail-body"></div>');
+      for (const n of bodyNodes) {
+        $body.append($(n));
+      }
+      $details.append($body);
+    }
+  });
+
   // 5. Assign deterministic IDs to h2/h3/h4, add .heading-anchor, and collect on-page TOC headings
   const headings = [];
   let headingCounter = 0;
@@ -816,8 +890,8 @@ export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle
         `<a class="heading-anchor" href="#${id}" aria-label="本节链接">#</a>`
     );
 
-    const insideSolution = $h.closest("details.solution-box").length > 0;
-    if ((level === 2 || level === 3) && !insideSolution) {
+    const insideCollapsed = $h.closest("details.solution-box, details.detail-box").length > 0;
+    if ((level === 2 || level === 3) && !insideCollapsed) {
       headings.push({
         level,
         id,
@@ -1410,6 +1484,9 @@ function generateHeadersFile({ dualReadingStyle = true } = {}) {
 /assets/katex/fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
+/assets/katex/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /assets/fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
@@ -1559,14 +1636,22 @@ export async function runBuild(cliOpts = {}) {
     fs.mkdirSync(path.join(outDir, "assets", "views"), { recursive: true });
   }
 
-  // Copy KaTeX stylesheet & fonts (resolved via createRequire for npm hoisting compatibility)
+  // Copy KaTeX stylesheet, fonts, and fingerprinted lazy JS runtime (NOT eagerly loaded in <head>)
   const katexPkgDir = resolvePackageDir("katex");
   const katexDistDir = path.join(katexPkgDir, "dist");
   const katexCssSrc = path.join(katexDistDir, "katex.min.css");
+  const katexJsSrc = path.join(katexDistDir, "katex.min.js");
   if (!fs.existsSync(katexCssSrc)) {
     throw new Error(`Missing KaTeX CSS at ${katexCssSrc}. Run npm install first.`);
   }
+  if (!fs.existsSync(katexJsSrc)) {
+    throw new Error(`Missing KaTeX JS runtime at ${katexJsSrc}. Run npm install first.`);
+  }
   fs.copyFileSync(katexCssSrc, path.join(outDir, "assets", "katex", "katex.min.css"));
+  const katexJsBuf = fs.readFileSync(katexJsSrc);
+  const katexJsHash = shortHash(katexJsBuf);
+  const katexJsRel = `assets/katex/katex.min.${katexJsHash}.js`;
+  fs.writeFileSync(path.join(outDir, katexJsRel), katexJsBuf);
   copyDirRecursive(
     path.join(katexDistDir, "fonts"),
     path.join(outDir, "assets", "katex", "fonts")
@@ -1630,6 +1715,7 @@ export async function runBuild(cliOpts = {}) {
     styles: stylesAssetList,
     scripts: scriptsAssetList,
     conceptsJson: conceptsJsonRel,
+    katexJs: katexJsRel,
   };
 
   // Stage 1: Compile pages (dual-mode or single-mode)

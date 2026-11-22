@@ -98,7 +98,7 @@ function findUnrenderedMathInDom($, rootNodes, label) {
       if (!inCode) {
         for (const rawLine of text.split("\n")) {
           const t = rawLine.trim();
-          if (/^:{3,}\s*(?:solution|hint)\b/i.test(t) || /^:{3,}$/.test(t)) {
+          if (/^:{3,}\s*(?:solution|hint|proof|detail|key)\b/i.test(t) || /^:{3,}$/.test(t)) {
             findings.push(`${label}: unclosed/unparsed container fence in text: "${t.slice(0, 120)}"`);
             break;
           }
@@ -149,6 +149,9 @@ const FORBIDDEN_CONCEPT_ANCESTOR_CLASSES = new Set([
   "callout-title",
   "solution-summary",
   "solution-summary-label",
+  "detail-summary",
+  "detail-summary-label",
+  "key-points-title",
 ]);
 
 const VALID_PRIORITIES = new Set(["core", "high", "normal"]);
@@ -491,6 +494,7 @@ export function runVerify(cliOpts = {}) {
       );
     }
     const requiredRules = [
+      "/assets/katex/*.js",
       "/assets/*.css",
       "/assets/concepts.*.json",
       "/assets/app.*.js",
@@ -552,8 +556,9 @@ export function runVerify(cliOpts = {}) {
     }
   }
 
-  // Verify KaTeX font files referenced in katex.min.css exist
-  const katexCssPath = path.join(outDir, "assets", "katex", "katex.min.css");
+  // Verify KaTeX font files referenced in katex.min.css exist + fingerprinted lazy katex.min.<hash8>.js
+  const katexDir = path.join(outDir, "assets", "katex");
+  const katexCssPath = path.join(katexDir, "katex.min.css");
   if (fs.existsSync(katexCssPath)) {
     const katexCss = fs.readFileSync(katexCssPath, "utf8");
     const fontUrls = new Set();
@@ -565,6 +570,26 @@ export function runVerify(cliOpts = {}) {
       const resolvedFont = path.resolve(path.dirname(katexCssPath), fontRel);
       if (!fs.existsSync(resolvedFont)) {
         errors.push(`Missing KaTeX font referenced by katex.min.css: ${fontRel}`);
+      }
+    }
+  }
+
+  let expectedKatexJsRel = null;
+  if (fs.existsSync(katexDir)) {
+    const katexJsMatches = fs
+      .readdirSync(katexDir, { withFileTypes: true })
+      .filter((e) => e.isFile() && /^katex\.min\.[0-9a-f]{8}\.js$/i.test(e.name))
+      .map((e) => e.name);
+    if (katexJsMatches.length !== 1) {
+      errors.push(
+        `dist/assets/katex/ must contain exactly 1 fingerprinted katex.min.<hash8>.js (found ${katexJsMatches.length}: ${katexJsMatches.join(", ") || "none"})`
+      );
+    } else {
+      const absKatexJs = path.join(katexDir, katexJsMatches[0]);
+      if (fs.statSync(absKatexJs).size === 0) {
+        errors.push(`Fingerprinted KaTeX JS runtime is empty: dist/assets/katex/${katexJsMatches[0]}`);
+      } else {
+        expectedKatexJsRel = `assets/katex/${katexJsMatches[0]}`;
       }
     }
   }
@@ -875,11 +900,15 @@ export function runVerify(cliOpts = {}) {
   let totalDisplayMath = 0;
   let totalInlineMath = 0;
   let totalSolutionBoxes = 0;
+  let totalDetailBoxes = 0;
+  let totalKeyPoints = 0;
   let totalAxiomaticViewsVerified = 0;
   let totalAxiomaticDisplayMath = 0;
   let totalAxiomaticInlineMath = 0;
   let totalAxiomaticConceptLinks = 0;
   let totalAxiomaticSolutionBoxes = 0;
+  let totalAxiomaticDetailBoxes = 0;
+  let totalAxiomaticKeyPoints = 0;
   const referencedViewFiles = new Set();
   const pageStats = [];
 
@@ -892,10 +921,15 @@ export function runVerify(cliOpts = {}) {
     const bodyNodes = $("body").length ? $("body").contents().toArray() : $.root().contents().toArray();
     errors.push(...findUnrenderedMathInDom($, bodyNodes, relFile));
 
-    // 5a-2. Fingerprinted CSS/JS/concepts, cascade order, and explicit SVG dimensions
+    // 5a-2. Fingerprinted CSS/JS/concepts, lazy KaTeX JS, cascade order, and explicit SVG dimensions
     if ($('script[src*="concepts-data.js"]').length > 0) {
       errors.push(
         `${relFile}: concepts-data.js must not be eagerly loaded via <script src>; use lazy concepts.<hash>.json fetch`
+      );
+    }
+    if ($('script[src*="katex"]').length > 0) {
+      errors.push(
+        `${relFile}: KaTeX JS runtime must not be eagerly loaded via <script src>; load lazily via body[data-katex-js-url]`
       );
     }
 
@@ -1015,6 +1049,25 @@ export function runVerify(cliOpts = {}) {
           errors.push(
             `${relFile}: data-concepts-url="${pageConceptsAttr}" resolves to "${resolvedPageConcepts}", expected "${expectedConceptsJsonRel}"`
           );
+        }
+      }
+
+      if (expectedKatexJsRel) {
+        const pageKatexAttr = ($body.attr("data-katex-js-url") || "").trim();
+        if (!pageKatexAttr) {
+          errors.push(`${relFile}: <body data-katex-js-url="..."> is missing`);
+        } else if (pageKatexAttr.startsWith("/")) {
+          errors.push(`${relFile}: data-katex-js-url="${pageKatexAttr}" must use relative path`);
+        } else {
+          const resolvedPageKatex = path
+            .relative(outDir, path.resolve(path.dirname(htmlFile), pageKatexAttr))
+            .split(path.sep)
+            .join("/");
+          if (resolvedPageKatex !== expectedKatexJsRel) {
+            errors.push(
+              `${relFile}: data-katex-js-url="${pageKatexAttr}" resolves to "${resolvedPageKatex}", expected "${expectedKatexJsRel}"`
+            );
+          }
         }
       }
       const idSet = idsByFile.get(htmlFile);
@@ -1181,6 +1234,38 @@ export function runVerify(cliOpts = {}) {
         }
       });
 
+      const $detailBoxes = $scope.find("details.detail-box");
+      totalDetailBoxes += $detailBoxes.length;
+      $detailBoxes.each((idx, boxEl) => {
+        const $box = $(boxEl);
+        const $summary = $box.children("summary").first();
+        if ($summary.length === 0) {
+          errors.push(`${relFile}: details.detail-box #${idx + 1} missing <summary> child`);
+        } else {
+          if ($summary.find("h1, h2, h3, h4, h5, h6").length > 0) {
+            errors.push(`${relFile}: details.detail-box #${idx + 1} <summary> must not contain heading tags`);
+          }
+          if ($summary.find("a.concept-ref").length > 0) {
+            errors.push(`${relFile}: details.detail-box #${idx + 1} <summary> must not contain .concept-ref links`);
+          }
+        }
+        if ($box.children(".detail-body").length === 0) {
+          errors.push(`${relFile}: details.detail-box #${idx + 1} missing .detail-body container`);
+        }
+      });
+
+      const $keyPoints = $scope.find("section.key-points");
+      totalKeyPoints += $keyPoints.length;
+      $keyPoints.each((idx, kpEl) => {
+        const $kp = $(kpEl);
+        if ($kp.children(".key-points-body").length === 0) {
+          errors.push(`${relFile}: section.key-points #${idx + 1} missing .key-points-body container`);
+        }
+        if ($kp.children(".key-points-title").find("a.concept-ref").length > 0) {
+          errors.push(`${relFile}: section.key-points #${idx + 1} .key-points-title must not contain .concept-ref links`);
+        }
+      });
+
       const seenConcepts = new Map();
 
       $scope.find("a.concept-ref[data-concept]").each((_, el) => {
@@ -1334,6 +1419,38 @@ export function runVerify(cliOpts = {}) {
                   }
                   if ($box.children(".solution-body").length === 0) {
                     errors.push(`${viewLabel}: details.solution-box #${idx + 1} missing .solution-body`);
+                  }
+                });
+
+                const $vDetails = $vArticle.find("details.detail-box");
+                totalAxiomaticDetailBoxes += $vDetails.length;
+                $vDetails.each((idx, boxEl) => {
+                  const $box = $v(boxEl);
+                  const $summary = $box.children("summary").first();
+                  if ($summary.length === 0) {
+                    errors.push(`${viewLabel}: details.detail-box #${idx + 1} missing <summary>`);
+                  } else {
+                    if ($summary.find("h1, h2, h3, h4, h5, h6").length > 0) {
+                      errors.push(`${viewLabel}: details.detail-box #${idx + 1} <summary> must not contain headings`);
+                    }
+                    if ($summary.find("a.concept-ref").length > 0) {
+                      errors.push(`${viewLabel}: details.detail-box #${idx + 1} <summary> must not contain .concept-ref`);
+                    }
+                  }
+                  if ($box.children(".detail-body").length === 0) {
+                    errors.push(`${viewLabel}: details.detail-box #${idx + 1} missing .detail-body`);
+                  }
+                });
+
+                const $vKeys = $vArticle.find("section.key-points");
+                totalAxiomaticKeyPoints += $vKeys.length;
+                $vKeys.each((idx, kpEl) => {
+                  const $kp = $v(kpEl);
+                  if ($kp.children(".key-points-body").length === 0) {
+                    errors.push(`${viewLabel}: section.key-points #${idx + 1} missing .key-points-body`);
+                  }
+                  if ($kp.children(".key-points-title").find("a.concept-ref").length > 0) {
+                    errors.push(`${viewLabel}: section.key-points #${idx + 1} .key-points-title must not contain .concept-ref`);
                   }
                 });
 
@@ -1500,14 +1617,15 @@ export function runVerify(cliOpts = {}) {
   console.log(
     `Summary (${dualReadingStyle ? "explained SSR" : "single-mode SSR"}): ${pageStats.length}/${pages.length} pages (core:${coreCount} high:${highCount} normal:${normalCount}) | ` +
       `${totalWords} words | ${totalDisplayMath} display + ${totalInlineMath} inline math | ` +
-      `${totalSolutionBoxes} solution boxes | ${totalConceptLinks} first-mention concept links | ` +
-      `${totalLinksChecked} internal links checked`
+      `${totalSolutionBoxes} solution / ${totalDetailBoxes} detail / ${totalKeyPoints} key blocks | ` +
+      `${totalConceptLinks} first-mention concept links | ${totalLinksChecked} internal links checked`
   );
   if (dualReadingStyle) {
     console.log(
       `Summary (axiomatic views): ${totalAxiomaticViewsVerified}/${pages.length} JSON views verified | ` +
         `${totalAxiomaticDisplayMath} display + ${totalAxiomaticInlineMath} inline math | ` +
-        `${totalAxiomaticSolutionBoxes} solution boxes | ${totalAxiomaticConceptLinks} first-mention concept links`
+        `${totalAxiomaticSolutionBoxes} solution / ${totalAxiomaticDetailBoxes} detail / ${totalAxiomaticKeyPoints} key blocks | ` +
+        `${totalAxiomaticConceptLinks} first-mention concept links`
     );
   }
   if (forbidEmDash || dualReadingStyle) {

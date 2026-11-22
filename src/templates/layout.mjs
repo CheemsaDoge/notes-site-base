@@ -1,5 +1,4 @@
 import {
-  FONT_THEME_HINTS,
   escapeHtml,
   normalizePriority,
   renderBrand,
@@ -56,17 +55,11 @@ export function renderPage(ctx) {
   const hasHeadings = headings.length > 0;
   const dualMode = features.dualReadingStyle;
   const labels = features.readingStyleLabels;
-  const defaultStyleHint =
-    features.defaultReadingStyle === 'axiomatic'
-      ? labels.axiomaticHint
-      : labels.explainedHint;
-  const defaultFontHint =
-    FONT_THEME_HINTS[features.defaultFontTheme] || FONT_THEME_HINTS.serif;
 
   const definedConceptsHtml =
     (page.definesConcepts ?? []).length > 0
       ? `<div class="defined-concepts">
-  <span class="defined-concepts-label">本节定义的核心概念（点击速览）：</span>
+  <span class="defined-concepts-label">本节核心概念</span>
   <div class="concept-chip-list">
     ${page.definesConcepts
       .map((c) => {
@@ -132,8 +125,11 @@ export function renderPage(ctx) {
 </a>`;
 
   const conceptsUrl = assets.conceptsJson ? assetBase + assets.conceptsJson : '';
+  const katexJsUrl = assets.katexJs ? assetBase + assets.katexJs : '';
   const axiomaticUrl =
     dualMode && page.axiomaticViewUrl ? assetBase + page.axiomaticViewUrl : '';
+
+  const detailToggleHtml = `<button type="button" class="btn btn-ghost btn-sm detail-toggle-all-btn" id="article-toggle-details" aria-expanded="false" hidden><span class="label-expand">展开本节证明</span><span class="label-collapse">收起本节证明</span></button>`;
 
   const prefsBarHtml = dualMode
     ? `<div class="reading-style-bar" id="reading-style-bar">
@@ -146,12 +142,10 @@ export function renderPage(ctx) {
               <span class="reading-style-label">字体</span>
               ${renderFontThemeToggle({ defaultFontTheme: features.defaultFontTheme })}
             </div>
-          </div>
-          <div class="reading-style-meta">
-            <span class="reading-style-hint" data-reading-style-hint>${escapeHtml(defaultStyleHint)}</span>
-            <span class="reading-prefs-sep" aria-hidden="true">·</span>
-            <span class="reading-style-hint font-theme-hint" data-font-theme-hint>${escapeHtml(defaultFontHint)}</span>
-            <span class="reading-style-status" id="reading-style-status" role="status" aria-live="polite"></span>
+            <div class="reading-prefs-trail">
+              ${detailToggleHtml}
+              <span class="reading-style-status" id="reading-style-status" role="status" aria-live="polite"></span>
+            </div>
           </div>
         </div>`
     : `<div class="reading-style-bar reading-style-bar-single" id="reading-style-bar">
@@ -160,8 +154,8 @@ export function renderPage(ctx) {
               <span class="reading-style-label">阅读字体</span>
               ${renderFontThemeToggle({ defaultFontTheme: features.defaultFontTheme })}
             </div>
-            <div class="reading-style-meta">
-              <span class="reading-style-hint font-theme-hint" data-font-theme-hint>${escapeHtml(defaultFontHint)}</span>
+            <div class="reading-prefs-trail">
+              ${detailToggleHtml}
               <span class="reading-style-status" id="reading-style-status" role="status" aria-live="polite"></span>
             </div>
           </div>
@@ -197,6 +191,7 @@ ${renderHead({
   data-asset-base="${escapeHtml(assetBase)}"
   data-page-base="${escapeHtml(pageBase)}"
   data-concepts-url="${escapeHtml(conceptsUrl)}"
+  data-katex-js-url="${escapeHtml(katexJsUrl)}"
   data-storage-prefix="${escapeHtml(storage.prefix)}"
   data-theme-key="${escapeHtml(storage.themeKey)}"
   data-export-prefix="${escapeHtml(site.exportPrefix)}"
@@ -284,7 +279,6 @@ ${articleHtml}
 
         <footer class="article-footer">
           <div class="article-completion-strip">
-            <span class="completion-hint">本节阅读进度已自动保存，刷新页面不会丢失当前位置。</span>
             <button type="button" class="read-toggle-btn" data-read-toggle aria-pressed="false">
               ${icons.check}
               <span data-read-toggle-label>标记为已读</span>

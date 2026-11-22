@@ -1,5 +1,4 @@
 import {
-  FONT_THEME_HINTS,
   escapeHtml,
   normalizePriority,
   renderBrand,
@@ -187,8 +186,6 @@ export function renderHome(ctx) {
   const icons = renderIcons();
   const dualMode = features.dualReadingStyle;
   const labels = features.readingStyleLabels;
-  const defaultFontHint =
-    FONT_THEME_HINTS[features.defaultFontTheme] || FONT_THEME_HINTS.serif;
 
   const totalPages = site.totalPages ?? pages.length;
   const totalConcepts = site.totalConcepts ?? concepts.length;
@@ -330,10 +327,7 @@ ${chaptersHtml}
     concepts.length > 0
       ? `<section class="home-section" aria-labelledby="concept-index-heading">
   <div class="home-section-head">
-    <div>
-      <h2 id="concept-index-heading" class="home-section-title">核心概念速览图谱</h2>
-      <p class="home-section-sub">点击任意概念标签弹出即时回忆卡片（含预渲染数学公式与考点分级），也可一键直达对应精讲小节。</p>
-    </div>
+    <h2 id="concept-index-heading" class="home-section-title">核心概念速览图谱</h2>
   </div>
   <div class="concept-index-box">
     <div class="concept-index-controls">
@@ -363,6 +357,7 @@ ${chaptersHtml}
       : '';
 
   const conceptsUrl = assets.conceptsJson ? assetBase + assets.conceptsJson : '';
+  const katexJsUrl = assets.katexJs ? assetBase + assets.katexJs : '';
   const dualBodyAttrs = dualMode
     ? `
   data-reading-style-explained-label="${escapeHtml(labels.explained)}"
@@ -387,6 +382,7 @@ ${renderHead({
   data-asset-base="${escapeHtml(assetBase)}"
   data-page-base="${escapeHtml(pageBase)}"
   data-concepts-url="${escapeHtml(conceptsUrl)}"
+  data-katex-js-url="${escapeHtml(katexJsUrl)}"
   data-storage-prefix="${escapeHtml(storage.prefix)}"
   data-theme-key="${escapeHtml(storage.themeKey)}"
   data-export-prefix="${escapeHtml(site.exportPrefix)}"
@@ -437,7 +433,6 @@ ${renderHead({
         </div>
       </div>
       <div class="home-prefs-meta">
-        <span class="reading-style-hint font-theme-hint" data-font-theme-hint>${escapeHtml(defaultFontHint)}</span>
         <span class="reading-style-status" id="home-font-status" role="status" aria-live="polite"></span>
       </div>
     </div>
@@ -486,10 +481,7 @@ ${renderHead({
 
     <section class="home-section" aria-labelledby="parts-heading">
       <div class="home-section-head">
-        <div>
-          <h2 id="parts-heading" class="home-section-title">${escapeHtml(partCountLabel)}</h2>
-          <p class="home-section-sub">按教材与考纲脉络划分为 ${escapeHtml(tree.length)} 篇，每篇进度与核心必考小节随阅读自动追踪。</p>
-        </div>
+        <h2 id="parts-heading" class="home-section-title">${escapeHtml(partCountLabel)}</h2>
       </div>
       <div class="parts-grid">
 ${partOverviewCardsHtml}
@@ -498,10 +490,7 @@ ${partOverviewCardsHtml}
 
     <section class="home-section" id="syllabus-section" aria-labelledby="syllabus-heading">
       <div class="home-section-head">
-        <div>
-          <h2 id="syllabus-heading" class="home-section-title">完整三级课程大纲</h2>
-          <p class="home-section-sub">篇 → 讲次 / 题型模块 → 微课小节，支持关键词与考点分级组合筛选。</p>
-        </div>
+        <h2 id="syllabus-heading" class="home-section-title">完整三级课程大纲</h2>
       </div>
       <div class="syllabus-controls">
         <label class="search-input-wrap syllabus-search-wrap">

@@ -52,7 +52,7 @@ async function testConfigAndConcepts() {
     { currentPageSlug: "p01", matcher }
   );
   assert.deepEqual(positive.linkedConceptIds, ["linear-map", "elem"]);
-  console.log("[smoke] 1/6 config & configurable inject-concepts PASS");
+  console.log("[smoke] 1/7 config & configurable inject-concepts PASS");
 }
 
 async function testDualModeStarter() {
@@ -88,7 +88,7 @@ async function testDualModeStarter() {
     assert.equal($p2('a.concept-ref[data-concept="derivative"]').length, 1);
     assert.equal($p2('a.concept-ref[data-concept="continuity"]').length, 1);
 
-    console.log("[smoke] 2/6 starter dual-mode build + verify PASS");
+    console.log("[smoke] 2/7 starter dual-mode build + verify PASS");
   } finally {
     fs.rmSync(tmpOut, { recursive: true, force: true });
   }
@@ -160,7 +160,7 @@ async function testSingleModeInitAndCli() {
     assert.equal($pg("[data-reading-style-btn]").length, 0);
     assert.equal($pg("[data-font-theme-btn]").length, 3);
 
-    console.log("[smoke] 3/6 CLI init (--single-mode) + single-mode check PASS");
+    console.log("[smoke] 3/7 CLI init (--single-mode) + single-mode check PASS");
   } finally {
     fs.rmSync(tmpWork, { recursive: true, force: true });
   }
@@ -202,7 +202,7 @@ async function testExtraStylesAndForbidEmDash() {
     const mobileIdx = cssHrefs.findIndex((h) => /04-mobile\.[0-9a-f]{8}\.css$/.test(h));
     const customIdx = cssHrefs.findIndex((h) => /custom\.[0-9a-f]{8}\.css$/.test(h));
     assert.ok(mobileIdx !== -1 && customIdx > mobileIdx, "extraStyles must load after 04-mobile.<hash>.css");
-    console.log("[smoke] 4/6 paths.extraStyles fingerprinting & cascade order PASS");
+    console.log("[smoke] 4/7 paths.extraStyles fingerprinting & cascade order PASS");
 
     // Negative test: forbidEmDash=true catches prose "——", forbidEmDash=false allows it
     const p1ExpPath = path.join(targetDir, "content-explained", "part1", "p01-derivative-intuition.md");
@@ -216,7 +216,7 @@ async function testExtraStylesAndForbidEmDash() {
     fs.writeFileSync(cfgPath, `${JSON.stringify(cfg, null, 2)}\n`, "utf8");
     const verifyAllowed = runVerify({ root: targetDir });
     assert.equal(verifyAllowed.ok, true, "Expected forbidEmDash=false to allow em-dash");
-    console.log("[smoke] 5/6 styleAudit.forbidEmDash gate (true/false) PASS");
+    console.log("[smoke] 5/7 styleAudit.forbidEmDash gate (true/false) PASS");
   } finally {
     fs.rmSync(tmpWork, { recursive: true, force: true });
   }
@@ -236,7 +236,122 @@ async function testNpmPackContents() {
   assert.ok(files.has("bin/notes-site.mjs"), "npm pack must include bin/notes-site.mjs");
   assert.ok(!files.has("scripts/test-smoke.mjs"), "npm pack must exclude internal scripts/test-smoke.mjs");
   assert.ok(!files.has("src/worker/test-worker.mjs"), "npm pack must exclude internal src/worker/test-worker.mjs");
-  console.log(`[smoke] 6/6 npm pack tarball manifest (${files.size} files, starter/gitignore preserved, tests excluded) PASS`);
+  console.log(`[smoke] 6/7 npm pack tarball manifest (${files.size} files, starter/gitignore preserved, tests excluded) PASS`);
+}
+
+async function testPhase7ContainersAndLazyKatex() {
+  const tmpWork = makeTmpDir("notes-site-p7-");
+  const targetDir = path.join(tmpWork, "p7-course");
+  try {
+    execFileSync(
+      process.execPath,
+      [CLI_PATH, "init", targetDir, "--title", "分层容器与懒加载测试", "--slug", "p7-demo"],
+      { stdio: "pipe" }
+    );
+
+    const p1ExpPath = path.join(targetDir, "content-explained", "part1", "p01-derivative-intuition.md");
+    fs.writeFileSync(
+      p1ExpPath,
+      `:::key 线性变换本节要点
+- 局部增量由线性项 $f'(x_0) h$ 主导。
+- 判断可导先看连续。
+:::
+
+:::key
+- 无标题要点块不应输出空标题栏。
+:::
+
+## 局部线性逼近
+
+:::proof
+### 内部隐藏小标题
+
+在证明里提前出现线性变换 $T(h) = f'(x_0)h$，但不应抢走可见正文的首次提及。
+:::
+
+可见正文里的线性变换概念应获得唯一首次链接。
+
+:::detail 展开步长算例
+| 步长 $h$ | 差商 |
+| --- | --- |
+| $0.1$ | $2.1$ |
+:::
+
+:::proof 展开自定义标题证明
+证明完毕。
+:::
+
+## 延伸阅读
+
+- 下一节：[线性变换与矩阵表示](./p02-linear-transformation.html)
+`,
+      "utf8"
+    );
+
+    await runBuild({ root: targetDir });
+    const vOk = runVerify({ root: targetDir });
+    assert.equal(vOk.ok, true, `Phase 7 containers/katex verify failed: ${JSON.stringify(vOk.errors)}`);
+    assert.equal(vOk.warnings.length, 0, `Unexpected Phase 7 warnings: ${JSON.stringify(vOk.warnings)}`);
+
+    const distDir = path.join(targetDir, "dist");
+    const headersText = fs.readFileSync(path.join(distDir, "_headers"), "utf8");
+    assert.ok(headersText.includes("/assets/katex/*.js"), "_headers must include /assets/katex/*.js");
+
+    const katexJsFiles = fs
+      .readdirSync(path.join(distDir, "assets", "katex"))
+      .filter((f) => /^katex\.min\.[0-9a-f]{8}\.js$/.test(f));
+    assert.equal(katexJsFiles.length, 1, "Expected exactly 1 fingerprinted katex.min.<hash8>.js");
+
+    const indexHtml = fs.readFileSync(path.join(distDir, "index.html"), "utf8");
+    const $idx = cheerio.load(indexHtml);
+    assert.equal($idx('script[src*="katex"]').length, 0, "KaTeX JS must not be eagerly loaded on index.html");
+    assert.equal($idx("body").attr("data-katex-js-url"), `./assets/katex/${katexJsFiles[0]}`);
+
+    const p1Html = fs.readFileSync(path.join(distDir, "pages", "p01-derivative-intuition.html"), "utf8");
+    const $p1 = cheerio.load(p1Html);
+    assert.equal($p1('script[src*="katex"]').length, 0, "KaTeX JS must not be eagerly loaded on article page");
+    assert.equal($p1("body").attr("data-katex-js-url"), `../assets/katex/${katexJsFiles[0]}`);
+
+    // Verify :::key (with title and without title)
+    const $keys = $p1("article section.key-points");
+    assert.equal($keys.length, 2, "Expected 2 section.key-points blocks");
+    assert.equal($keys.eq(0).children(".key-points-title").text().trim(), "线性变换本节要点");
+    assert.equal($keys.eq(0).children(".key-points-title").find("a.concept-ref").length, 0);
+    assert.equal($keys.eq(1).children(".key-points-title").length, 0, "Untitled :::key must omit .key-points-title");
+
+    // Verify :::proof (default + custom title) and :::detail
+    const $proofs = $p1("article details.detail-box.detail-proof");
+    assert.equal($proofs.length, 2, "Expected 2 detail-proof blocks");
+    assert.equal($proofs.eq(0).find(".detail-summary-label").text().trim(), "展开完整证明");
+    assert.equal($proofs.eq(1).find(".detail-summary-label").text().trim(), "展开自定义标题证明");
+
+    const $allDetails = $p1("article details.detail-box");
+    assert.equal($allDetails.length, 3, "Expected 3 detail-box blocks total (2 proof + 1 detail)");
+    assert.equal($allDetails.eq(1).find(".detail-summary-label").text().trim(), "展开步长算例");
+
+    // Verify visible prose won first-mention priority over earlier collapsed :::proof
+    const $lmLinks = $p1('article a.concept-ref[data-concept="linear-map"]');
+    assert.equal($lmLinks.length, 1);
+    assert.equal($lmLinks.closest("details.detail-box").length, 0, "Visible prose must beat collapsed :::proof for first mention");
+
+    // Verify heading inside collapsed :::proof was excluded from on-page TOC
+    assert.ok(!$p1("#ontoc-list").text().includes("内部隐藏小标题"), "Collapsed :::proof heading must not leak into TOC");
+
+    // Negative tests: unclosed :::proof, :::detail, :::key must fail runVerify
+    for (const badFence of [":::proof 未闭合证明\n内容", ":::detail 未闭合推导\n内容", ":::key 未闭合要点\n内容"]) {
+      const orig = fs.readFileSync(p1ExpPath, "utf8");
+      fs.writeFileSync(p1ExpPath, `${orig}\n\n${badFence}\n`, "utf8");
+      await runBuild({ root: targetDir });
+      const vFail = runVerify({ root: targetDir });
+      assert.equal(vFail.ok, false, `Expected unclosed fence "${badFence.split("\n")[0]}" to fail verify`);
+      assert.ok(vFail.errors.some((e) => e.includes("unclosed/unparsed container fence")));
+      fs.writeFileSync(p1ExpPath, orig, "utf8");
+    }
+
+    console.log("[smoke] 7/7 Phase 7 :::key/:::proof/:::detail containers, unclosed fence gates & lazy KaTeX JS PASS");
+  } finally {
+    fs.rmSync(tmpWork, { recursive: true, force: true });
+  }
 }
 
 await testConfigAndConcepts();
@@ -244,4 +359,5 @@ await testDualModeStarter();
 await testSingleModeInitAndCli();
 await testExtraStylesAndForbidEmDash();
 await testNpmPackContents();
-console.log("\n[smoke] ALL 6 SMOKE TEST SUITES PASSED!");
+await testPhase7ContainersAndLazyKatex();
+console.log("\n[smoke] ALL 7 SMOKE TEST SUITES PASSED!");

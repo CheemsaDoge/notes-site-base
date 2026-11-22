@@ -41,6 +41,9 @@ const SKIP_CLASSES = new Set([
   "callout-title",
   "solution-summary",
   "solution-summary-label",
+  "detail-summary",
+  "detail-summary-label",
+  "key-points-title",
   "heading-anchor",
   "no-concept-links",
 ]);
@@ -385,23 +388,23 @@ export function injectConcepts(html, options = {}) {
     }
   }
 
-  function isClosedSolutionBox(el) {
+  function isClosedCollapsibleBox(el) {
     if (!el || el.type !== "tag" || (el.name || "").toLowerCase() !== "details") return false;
     const attribs = el.attribs || {};
     if ("open" in attribs) return false;
-    const cls = attribs.class || "";
-    return cls.split(/\s+/).includes("solution-box");
+    const classes = (attribs.class || "").split(/\s+/);
+    return classes.includes("solution-box") || classes.includes("detail-box");
   }
 
-  const deferredSolutionBoxes = [];
+  const deferredCollapsibleBoxes = [];
 
-  function walkNode(node, deferClosedSolutions) {
+  function walkNode(node, deferClosedBoxes) {
     if (!node) return;
     if (node.type === "tag" && shouldSkipElement(node)) return;
     if (node.type === "script" || node.type === "style") return;
 
-    if (deferClosedSolutions && isClosedSolutionBox(node)) {
-      deferredSolutionBoxes.push(node);
+    if (deferClosedBoxes && isClosedCollapsibleBox(node)) {
+      deferredCollapsibleBoxes.push(node);
       return;
     }
 
@@ -412,7 +415,7 @@ export function injectConcepts(html, options = {}) {
 
     const children = Array.isArray(node.children) ? [...node.children] : [];
     for (const child of children) {
-      walkNode(child, deferClosedSolutions);
+      walkNode(child, deferClosedBoxes);
     }
   }
 
@@ -425,13 +428,13 @@ export function injectConcepts(html, options = {}) {
     roots = $.root().contents().toArray();
   }
 
-  // Pass 1: Walk visible article prose first (deferring collapsed details.solution-box:not([open]))
+  // Pass 1: Walk visible article prose first (deferring collapsed details.solution-box / details.detail-box)
   for (const root of roots) {
     walkNode(root, true);
   }
 
-  // Pass 2: Walk deferred collapsed solution boxes sharing seenConceptIds (preserving <= 1 per page)
-  for (const box of deferredSolutionBoxes) {
+  // Pass 2: Walk deferred collapsed boxes sharing seenConceptIds (preserving <= 1 per page)
+  for (const box of deferredCollapsibleBoxes) {
     const children = Array.isArray(box.children) ? [...box.children] : [];
     for (const child of children) {
       walkNode(child, false);

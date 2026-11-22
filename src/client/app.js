@@ -272,6 +272,7 @@
   let syncFontThemeUI = () => ({ ok: false });
   let jumpToArticleHeadingFn = () => Promise.resolve(false);
   let rebindHeadingObserver = () => {};
+  let syncArticleDetailsToggle = () => {};
   let runInitialScrollOrHashRestore = () => {};
 
   function applyMergedProgress(progress) {
@@ -792,6 +793,35 @@
       });
     }
 
+    // Article in-page collapsible proof/detail Expand/Collapse All (#article-toggle-details)
+    const articleToggleDetailsBtn = document.getElementById('article-toggle-details');
+    const articleBodyForDetails = document.getElementById('article-body');
+
+    syncArticleDetailsToggle = () => {
+      if (!articleToggleDetailsBtn || !articleBodyForDetails) return;
+      const boxes = articleBodyForDetails.querySelectorAll('details.detail-box');
+      if (boxes.length === 0) {
+        articleToggleDetailsBtn.hidden = true;
+        articleToggleDetailsBtn.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      articleToggleDetailsBtn.hidden = false;
+      const allOpen = Array.prototype.every.call(boxes, (d) => d.open);
+      articleToggleDetailsBtn.setAttribute('aria-expanded', String(allOpen));
+    };
+
+    if (articleToggleDetailsBtn && articleBodyForDetails) {
+      articleToggleDetailsBtn.addEventListener('click', () => {
+        const boxes = articleBodyForDetails.querySelectorAll('details.detail-box');
+        if (boxes.length === 0) return;
+        const shouldExpand = articleToggleDetailsBtn.getAttribute('aria-expanded') !== 'true';
+        for (const d of boxes) {
+          d.open = shouldExpand;
+        }
+        articleToggleDetailsBtn.setAttribute('aria-expanded', String(shouldExpand));
+      });
+    }
+
     // Keep aria-expanded synced on individual toggle events (capture)
     document.addEventListener(
       'toggle',
@@ -800,6 +830,12 @@
         if (!(target instanceof HTMLDetailsElement)) return;
         const container = target.closest('#toc-tree-list, #syllabus-tree');
         if (container) syncToggleButton(container);
+        if (
+          target.classList.contains('detail-box') &&
+          articleBodyForDetails?.contains(target)
+        ) {
+          syncArticleDetailsToggle();
+        }
       },
       { capture: true }
     );
@@ -808,6 +844,7 @@
     for (const id of ['toc-tree-list', 'syllabus-tree']) {
       syncToggleButton(document.getElementById(id));
     }
+    syncArticleDetailsToggle();
 
     function matchesPriorityMode(priority, mode) {
       if (mode === 'core') return priority === 'core';
@@ -2712,6 +2749,7 @@
       rebuildArticleTocs(resolvedHeadings);
       updateArticleMetaPills(view);
       rebindHeadingObserver();
+      syncArticleDetailsToggle();
 
       displayedMode = targetMode;
       delete articleEl.dataset.switching;

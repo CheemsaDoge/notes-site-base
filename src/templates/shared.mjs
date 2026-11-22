@@ -662,6 +662,6 @@ export function renderSiteFooter(site) {
   const leftText = note ? `${title} · ${note}` : title;
   return `<footer class="site-footer">
   <span>${escapeHtml(leftText)}</span>
-  <span>公式由 KaTeX 构建期预渲染 · 阅读进度与划词笔记本机自动保存，支持免注册云端同步</span>
+  <span>KaTeX 预渲染 · 本地自动保存 &amp; 云端同步</span>
 </footer>`;
 }
