@@ -196,6 +196,60 @@ function testSanitizer() {
   assert.ok(cleanKatex.includes('preserveAspectRatio="xMinYMin slice"'));
   assert.ok(cleanKatex.includes('<path d="M95 702L145 500"></path>'));
 
+  // Table with KaTeX, colspan/rowspan (1..20), and cell style (text-align/white-space)
+  const katexTable =
+    '<table onclick="alert(1)"><caption>乘法表</caption><thead><tr><th style="text-align:center;white-space:nowrap" colspan="2" rowspan="1">运算</th></tr></thead><tbody><tr><td style="text-align:right;line-height:1.4;border-style:solid;max-height:10em"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>a</mi><mo>⋅</mo><mi>b</mi></math></span></td><td style="text-align:left"><u>单位元</u></td></tr></tbody><tfoot><tr><td colspan="2">注</td></tr></tfoot></table>';
+  const cleanTable = sanitizeQuoteHtml(katexTable);
+  assert.ok(!cleanTable.includes('onclick'), 'table onclick must be stripped');
+  assert.equal(
+    cleanTable,
+    '<table><caption>乘法表</caption><thead><tr><th style="text-align:center;white-space:nowrap" colspan="2" rowspan="1">运算</th></tr></thead><tbody><tr><td style="text-align:right;line-height:1.4;border-style:solid;max-height:10em"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>a</mi><mo>⋅</mo><mi>b</mi></math></span></td><td style="text-align:left"><u>单位元</u></td></tr></tbody><tfoot><tr><td colspan="2">注</td></tr></tfoot></table>'
+  );
+
+  // Table & cell XSS / out-of-range colspan/rowspan / dangerous style blocking
+  const hostileTable =
+    '<table colspan="2"><tr><td colspan="1&quot; onload=alert(1)" rowspan="21" style="position:fixed;text-align:center;background:url(javascript:alert(1));white-space:bogus;border-style:evil">x</td><th colspan="0" rowspan="-1" style="text-align:left;width:expression(1)">y</th></tr></table>';
+  const cleanHostileTable = sanitizeQuoteHtml(hostileTable);
+  assert.ok(!cleanHostileTable.includes('onload'), 'onload must be blocked');
+  assert.ok(!cleanHostileTable.includes('colspan='), 'invalid/non-cell colspan must be stripped');
+  assert.ok(!cleanHostileTable.includes('rowspan='), 'out-of-range rowspan must be stripped');
+  assert.ok(!cleanHostileTable.includes('position:fixed'), 'position:fixed on td must be stripped');
+  assert.ok(!cleanHostileTable.includes('expression('), 'expression() on th must be stripped');
+  // NOTE: because raw style on td contained url(...), fail-closed DANGEROUS_CSS_RE rejects the entire style string!
+  assert.equal(
+    cleanHostileTable,
+    '<table><tr><td>x</td><th>y</th></tr></table>'
+  );
+
+  // Mixed safe + invalid (non-dangerous) properties on td keep only valid safe properties
+  assert.equal(
+    sanitizeQuoteHtml(
+      '<table><tr><td style="position:fixed;text-align:center;white-space:bogus">z</td></tr></table>'
+    ),
+    '<table><tr><td style="text-align:center">z</td></tr></table>'
+  );
+
+  // Nested lists with KaTeX, headings, blockquote, pre/code, and self-terminating <hr>
+  const richProse =
+    '<h3>判定步骤</h3><blockquote><p>满足三条即可</p></blockquote><hr><ul><li>第一条：<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><mphantom><mi>x</mi></mphantom><menclose notation="updiagonalstrike"><mi>y</mi></menclose></math></span><ol><li>子步骤</li></ol></li></ul><pre><code>x = 1</code></pre>';
+  const cleanRichProse = sanitizeQuoteHtml(richProse);
+  assert.equal(cleanRichProse, richProse);
+  assert.ok(!cleanRichProse.includes('</hr>'), '<hr> must be void and never emit </hr>');
+
+  // SVG <g>, <line>, <rect> valid attrs preserved & hostile attrs stripped
+  const svgExtended =
+    '<svg viewBox="0 0 20 20"><g transform="translate(2, 3)" fill="none" stroke="currentColor" style="opacity:0.8"><line x1="0" y1="0" x2="10" y2="10" stroke="#111" stroke-width="1"/><rect x="1" y="2" width="8" height="4" rx="1" fill="#333"/></g></svg>';
+  assert.equal(
+    sanitizeQuoteHtml(svgExtended),
+    '<svg viewBox="0 0 20 20"><g transform="translate(2, 3)" fill="none" stroke="currentColor" style="opacity:0.8"><line x1="0" y1="0" x2="10" y2="10" stroke="#111" stroke-width="1"></line><rect x="1" y="2" width="8" height="4" rx="1" fill="#333"></rect></g></svg>'
+  );
+  const svgHostile =
+    '<svg viewBox="0 0 20 20"><g transform="url(https://evil.test)" onclick="alert(1)"><line x1="javascript:1" y1="0" x2="10" y2="10" stroke="url(#bad)"/><rect x="1" y="2" width="expression(1)" height="4"/></g></svg>';
+  assert.equal(
+    sanitizeQuoteHtml(svgHostile),
+    '<svg viewBox="0 0 20 20"><g><line y1="0" x2="10" y2="10"></line><rect x="1" y="2" height="4"></rect></g></svg>'
+  );
+
   console.log('✓ sanitizer tests passed');
 }
 

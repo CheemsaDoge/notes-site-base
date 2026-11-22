@@ -44,7 +44,7 @@ const DROP_SUBTREE_TAGS = new Set([
   'feimage',
 ]);
 
-const VOID_TAGS = new Set(['br', 'wbr']);
+const VOID_TAGS = new Set(['br', 'wbr', 'hr']);
 
 const MATHML_TAGS = new Set([
   'math',
@@ -69,6 +69,8 @@ const MATHML_TAGS = new Set([
   'mspace',
   'mstyle',
   'mpadded',
+  'mphantom',
+  'menclose',
   'annotation',
 ]);
 
@@ -78,11 +80,14 @@ const PROSE_TAGS = new Set([
   'p',
   'br',
   'wbr',
+  'hr',
   'strong',
   'b',
   'em',
   'i',
+  'u',
   'code',
+  'pre',
   'sub',
   'sup',
   'mark',
@@ -92,9 +97,21 @@ const PROSE_TAGS = new Set([
   'ul',
   'ol',
   'li',
+  'table',
+  'thead',
+  'tbody',
+  'tfoot',
+  'tr',
+  'th',
+  'td',
+  'caption',
+  'blockquote',
+  'h2',
+  'h3',
+  'h4',
 ]);
 
-const SVG_TAGS = new Set(['svg', 'path', 'circle']);
+const SVG_TAGS = new Set(['svg', 'path', 'circle', 'line', 'rect', 'g']);
 
 const ALLOWED_TAGS = new Set([...PROSE_TAGS, ...MATHML_TAGS, ...SVG_TAGS]);
 
@@ -128,6 +145,7 @@ const MATHML_SAFE_ATTRS = new Set([
   'movablelimits',
   'largeop',
   'form',
+  'notation',
 ]);
 
 const SVG_ATTRS = new Set([
@@ -142,8 +160,11 @@ const SVG_ATTRS = new Set([
   'style',
 ]);
 
-const PATH_ATTRS = new Set(['d', 'fill', 'stroke', 'stroke-width', 'class']);
-const CIRCLE_ATTRS = new Set(['cx', 'cy', 'r', 'fill', 'stroke', 'stroke-width', 'class']);
+const PATH_ATTRS = new Set(['d', 'fill', 'stroke', 'stroke-width', 'class', 'transform']);
+const CIRCLE_ATTRS = new Set(['cx', 'cy', 'r', 'fill', 'stroke', 'stroke-width', 'class', 'transform']);
+const LINE_ATTRS = new Set(['x1', 'y1', 'x2', 'y2', 'fill', 'stroke', 'stroke-width', 'class', 'transform']);
+const RECT_ATTRS = new Set(['x', 'y', 'width', 'height', 'rx', 'ry', 'fill', 'stroke', 'stroke-width', 'class', 'transform']);
+const G_ATTRS = new Set(['fill', 'stroke', 'stroke-width', 'class', 'transform', 'aria-hidden', 'style']);
 
 // Canonical SVG camelCase attribute names when serializing
 const CANONICAL_ATTR_NAMES = new Map([
@@ -157,6 +178,7 @@ const ALLOWED_STYLE_PROPS = new Set([
   'max-width',
   'height',
   'min-height',
+  'max-height',
   'top',
   'bottom',
   'left',
@@ -177,6 +199,7 @@ const ALLOWED_STYLE_PROPS = new Set([
   'border-right-width',
   'border-left-width',
   'border-color',
+  'border-style',
   'border-bottom-style',
   'border-top-style',
   'color',
@@ -184,8 +207,11 @@ const ALLOWED_STYLE_PROPS = new Set([
   'position',
   'display',
   'font-size',
+  'line-height',
   'letter-spacing',
   'opacity',
+  'text-align',
+  'white-space',
 ]);
 
 const SAFE_POSITION_VALUES = new Set(['relative', 'absolute', 'static']);
@@ -198,6 +224,9 @@ const SAFE_DISPLAY_VALUES = new Set([
   'table-cell',
   'none',
 ]);
+const SAFE_TEXT_ALIGN_VALUES = new Set(['left', 'right', 'center', 'justify', 'start', 'end']);
+const SAFE_WHITE_SPACE_VALUES = new Set(['normal', 'nowrap', 'pre', 'pre-wrap', 'pre-line', 'break-spaces']);
+const SAFE_BORDER_STYLE_VALUES = new Set(['none', 'solid', 'dashed', 'dotted', 'double']);
 const SAFE_CSS_VALUE_RE = /^[a-zA-Z0-9\s.,%#()+\-]+$/;
 const DANGEROUS_CSS_RE =
   /url\s*\(|expression\s*\(|javascript:|vbscript:|data:|@import|-moz-binding|behavior\s*:|\\|\/\*|<|>|"|'/i;
@@ -208,7 +237,9 @@ const SAFE_PAR_RE = /^[a-zA-Z\s]+$/;
 const SAFE_PATH_D_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9.,\s+\-eE]+$/;
 const SAFE_SVG_NUM_RE = /^-?(?:\d+\.?\d*|\.\d+)(?:%|px|em|ex|pt)?$/;
 const SAFE_SVG_PAINT_RE = /^(none|currentColor|#[0-9a-fA-F]{3,8}|[a-zA-Z]+)$/;
+const SAFE_SVG_TRANSFORM_RE = /^(?:\s*(?:translate|scale|rotate|skewX|skewY|matrix)\(\s*[0-9.,+\-\s]+\s*\)\s*)+$/;
 const SAFE_ATTR_VALUE_RE = /^[a-zA-Z0-9_.\-+%/,\s:()#]+$/;
+const SAFE_SPAN_INT_RE = /^[1-9]\d?$/;
 
 const NAMED_ENTITIES = new Map([
   ['amp', '&'],
@@ -275,6 +306,18 @@ function sanitizeStyle(rawStyle) {
     if (prop === 'display' && !SAFE_DISPLAY_VALUES.has(val.toLowerCase())) {
       continue;
     }
+    if (prop === 'text-align' && !SAFE_TEXT_ALIGN_VALUES.has(val.toLowerCase())) {
+      continue;
+    }
+    if (prop === 'white-space' && !SAFE_WHITE_SPACE_VALUES.has(val.toLowerCase())) {
+      continue;
+    }
+    if (
+      (prop === 'border-style' || prop === 'border-bottom-style' || prop === 'border-top-style') &&
+      !SAFE_BORDER_STYLE_VALUES.has(val.toLowerCase())
+    ) {
+      continue;
+    }
     out.push(`${prop}:${val}`);
   }
   return out.join(';');
@@ -334,6 +377,11 @@ function sanitizeAttribute(tag, rawName, rawValue) {
     if (name === 'class') {
       return SAFE_CLASS_RE.test(decoded) ? ['class', decoded] : null;
     }
+    if (name === 'transform') {
+      return decoded.length <= 512 && SAFE_SVG_TRANSFORM_RE.test(decoded)
+        ? ['transform', decoded]
+        : null;
+    }
     return null;
   }
 
@@ -351,11 +399,99 @@ function sanitizeAttribute(tag, rawName, rawValue) {
     if (name === 'class') {
       return SAFE_CLASS_RE.test(decoded) ? ['class', decoded] : null;
     }
+    if (name === 'transform') {
+      return decoded.length <= 512 && SAFE_SVG_TRANSFORM_RE.test(decoded)
+        ? ['transform', decoded]
+        : null;
+    }
     return null;
   }
 
+  if (tag === 'line') {
+    if (!LINE_ATTRS.has(name)) return null;
+    if (name === 'x1' || name === 'y1' || name === 'x2' || name === 'y2') {
+      return SAFE_SVG_NUM_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'fill' || name === 'stroke') {
+      return SAFE_SVG_PAINT_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'stroke-width') {
+      return SAFE_CSS_VALUE_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'class') {
+      return SAFE_CLASS_RE.test(decoded) ? ['class', decoded] : null;
+    }
+    if (name === 'transform') {
+      return decoded.length <= 512 && SAFE_SVG_TRANSFORM_RE.test(decoded)
+        ? ['transform', decoded]
+        : null;
+    }
+    return null;
+  }
+
+  if (tag === 'rect') {
+    if (!RECT_ATTRS.has(name)) return null;
+    if (
+      name === 'x' ||
+      name === 'y' ||
+      name === 'width' ||
+      name === 'height' ||
+      name === 'rx' ||
+      name === 'ry'
+    ) {
+      return SAFE_SVG_NUM_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'fill' || name === 'stroke') {
+      return SAFE_SVG_PAINT_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'stroke-width') {
+      return SAFE_CSS_VALUE_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'class') {
+      return SAFE_CLASS_RE.test(decoded) ? ['class', decoded] : null;
+    }
+    if (name === 'transform') {
+      return decoded.length <= 512 && SAFE_SVG_TRANSFORM_RE.test(decoded)
+        ? ['transform', decoded]
+        : null;
+    }
+    return null;
+  }
+
+  if (tag === 'g') {
+    if (!G_ATTRS.has(name)) return null;
+    if (name === 'fill' || name === 'stroke') {
+      return SAFE_SVG_PAINT_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'stroke-width') {
+      return SAFE_CSS_VALUE_RE.test(decoded) ? [name, decoded] : null;
+    }
+    if (name === 'class') {
+      return SAFE_CLASS_RE.test(decoded) ? ['class', decoded] : null;
+    }
+    if (name === 'aria-hidden') {
+      return decoded === 'true' || decoded === 'false' ? [name, decoded] : null;
+    }
+    if (name === 'style') {
+      const clean = sanitizeStyle(decoded);
+      return clean ? ['style', clean] : null;
+    }
+    if (name === 'transform') {
+      return decoded.length <= 512 && SAFE_SVG_TRANSFORM_RE.test(decoded)
+        ? ['transform', decoded]
+        : null;
+    }
+    return null;
+  }
+
+  if ((tag === 'th' || tag === 'td') && (name === 'colspan' || name === 'rowspan')) {
+    if (!SAFE_SPAN_INT_RE.test(decoded)) return null;
+    const span = Number.parseInt(decoded, 10);
+    return span >= 1 && span <= 20 ? [name, String(span)] : null;
+  }
+
   if (name === 'style') {
-    if (tag !== 'span' && tag !== 'div') return null;
+    if (tag !== 'span' && tag !== 'div' && tag !== 'th' && tag !== 'td') return null;
     const clean = sanitizeStyle(decoded);
     return clean ? ['style', clean] : null;
   }
@@ -602,7 +738,10 @@ export function sanitizeQuoteHtml(rawHtml) {
 
     if (VOID_TAGS.has(tag)) {
       pushChunk(`<${tag}${attrOut}>`);
-    } else if (selfClosing && (tag === 'path' || tag === 'circle' || MATHML_TAGS.has(tag))) {
+    } else if (
+      selfClosing &&
+      (tag === 'path' || tag === 'circle' || tag === 'line' || tag === 'rect' || MATHML_TAGS.has(tag))
+    ) {
       pushChunk(`<${tag}${attrOut}></${tag}>`);
     } else {
       pushChunk(`<${tag}${attrOut}>`);
