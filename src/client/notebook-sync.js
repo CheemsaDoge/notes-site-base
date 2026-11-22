@@ -34,8 +34,14 @@
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const ALLOWED_HTML_TAGS = new Set([
-    'span', 'div', 'p', 'strong', 'b', 'em', 'i', 'u', 's', 'code', 'sub', 'sup', 'br', 'small',
+    'span', 'div', 'p', 'strong', 'b', 'em', 'i', 'u', 's', 'del', 'mark',
+    'code', 'pre', 'sub', 'sup', 'br', 'wbr', 'hr', 'small',
+    'ul', 'ol', 'li',
+    'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+    'blockquote', 'h2', 'h3', 'h4',
   ]);
+  const STYLE_ALLOWED_HTML_TAGS = new Set(['span', 'div', 'th', 'td']);
+  const TABLE_CELL_TAGS = new Set(['th', 'td']);
   const ALLOWED_MATHML_TAGS = new Set([
     'math', 'semantics', 'mrow', 'mi', 'mo', 'mn', 'mtext', 'msup', 'msub', 'msubsup',
     'mfrac', 'msqrt', 'mroot', 'mspace', 'mstyle', 'mtable', 'mtr', 'mtd',
@@ -43,18 +49,20 @@
   ]);
   const ALLOWED_SVG_TAGS = new Set(['svg', 'path', 'line', 'rect', 'circle', 'g']);
 
-  const ALLOWED_HTML_ATTRS = new Set(['class', 'aria-hidden', 'style']);
+  const ALLOWED_HTML_ATTRS = new Set(['class', 'aria-hidden', 'style', 'colspan', 'rowspan']);
   const ALLOWED_MATHML_ATTRS = new Set([
     'xmlns', 'encoding', 'display', 'mathvariant', 'stretchy', 'fence', 'separator',
     'lspace', 'rspace', 'linethickness', 'columnalign', 'columnspacing',
-    'rowspacing', 'scriptlevel', 'displaystyle', 'accent', 'accentunder',
-    'width', 'minsize', 'maxsize', 'aria-hidden',
+    'rowspacing', 'columnlines', 'rowlines', 'frame', 'symmetric', 'movablelimits',
+    'largeop', 'form', 'notation', 'scriptlevel', 'displaystyle', 'accent',
+    'accentunder', 'width', 'minsize', 'maxsize', 'aria-hidden',
   ]);
   const ALLOWED_SVG_ATTRS = new Set([
     'xmlns', 'class', 'style', 'width', 'height', 'viewBox', 'preserveAspectRatio', 'd',
-    'x1', 'y1', 'x2', 'y2', 'x', 'y', 'cx', 'cy', 'r', 'fill', 'stroke', 'stroke-width',
-    'transform', 'aria-hidden', 'focusable',
+    'x1', 'y1', 'x2', 'y2', 'x', 'y', 'rx', 'ry', 'cx', 'cy', 'r', 'fill', 'stroke',
+    'stroke-width', 'transform', 'aria-hidden', 'focusable',
   ]);
+  const SVG_NUM_ATTRS = new Set(['width', 'height', 'x1', 'y1', 'x2', 'y2', 'x', 'y', 'rx', 'ry', 'cx', 'cy', 'r', 'stroke-width']);
 
   const ALLOWED_CSS_PROPS = new Set([
     'top', 'bottom', 'left', 'right', 'height', 'min-height', 'max-height',
@@ -62,13 +70,29 @@
     'margin-left', 'margin-right', 'padding', 'padding-top', 'padding-bottom',
     'padding-left', 'padding-right', 'border-bottom-width', 'border-top-width',
     'border-right-width', 'border-left-width', 'border-color', 'border-style',
-    'vertical-align', 'font-size', 'line-height', 'display', 'position',
-    'color', 'background-color', 'opacity', 'text-align', 'white-space',
+    'border-bottom-style', 'border-top-style', 'vertical-align', 'font-size',
+    'line-height', 'letter-spacing', 'display', 'position', 'color',
+    'background-color', 'opacity', 'text-align', 'white-space',
   ]);
 
-  const UNSAFE_CSS_VALUE_RE = /url\s*\(|expression\s*\(|@import|behavior\s*:|-moz-binding|javascript:|data:|\\|\/\*|<|>|"|'/i;
+  const SAFE_POSITION_VALUES = new Set(['relative', 'absolute', 'static']);
+  const SAFE_DISPLAY_VALUES = new Set([
+    'inline', 'inline-block', 'block', 'table', 'table-row', 'table-cell', 'none',
+  ]);
+  const SAFE_TEXT_ALIGN_VALUES = new Set(['left', 'right', 'center', 'justify', 'start', 'end']);
+  const SAFE_WHITE_SPACE_VALUES = new Set([
+    'normal', 'nowrap', 'pre', 'pre-wrap', 'pre-line', 'break-spaces',
+  ]);
+  const SAFE_BORDER_STYLE_VALUES = new Set(['none', 'solid', 'dashed', 'dotted', 'double']);
+  const SAFE_CSS_VALUE_RE = /^[a-zA-Z0-9\s.,%#()+\-]+$/;
+  const UNSAFE_CSS_VALUE_RE = /url\s*\(|expression\s*\(|calc\s*\(|var\s*\(|attr\s*\(|@import|behavior\s*:|-moz-binding|javascript:|vbscript:|data:|\\|\/\*|<|>|"|'/i;
+  const SAFE_CLASS_RE = /^[a-zA-Z0-9_\-\s]+$/;
+  const SAFE_VIEWBOX_RE = /^[0-9.+\-\s,]+$/;
+  const SAFE_PAR_RE = /^[a-zA-Z\s]+$/;
+  const SAFE_PATH_D_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9.,\s+\-eE]+$/;
   const SAFE_SVG_PAINT_RE = /^(?:none|currentColor|#[0-9a-fA-F]{3,8}|[a-zA-Z]+)$/;
-  const SAFE_SVG_NUM_RE = /^-?\d+(?:\.\d+)?(?:%|px|em|ex)?$/;
+  const SAFE_SVG_NUM_RE = /^-?(?:\d+\.?\d*|\.\d+)(?:%|px|em|ex|pt)?$/;
+  const SAFE_SVG_TRANSFORM_RE = /^(?:\s*(?:translate|scale|rotate|skewX|skewY|matrix)\(\s*[0-9.,+\-\s]+\s*\)\s*)+$/;
 
   function sanitizeInlineStyle(styleText) {
     if (!styleText || typeof styleText !== 'string') return '';
@@ -79,8 +103,18 @@
       const prop = part.slice(0, idx).trim().toLowerCase();
       const val = part.slice(idx + 1).trim();
       if (!prop || !val || !ALLOWED_CSS_PROPS.has(prop)) continue;
-      if (UNSAFE_CSS_VALUE_RE.test(val)) continue;
-      if (prop === 'position' && !/^(?:relative|absolute|static)$/i.test(val)) continue;
+      if (UNSAFE_CSS_VALUE_RE.test(val) || !SAFE_CSS_VALUE_RE.test(val)) continue;
+      const low = val.toLowerCase();
+      if (prop === 'position' && !SAFE_POSITION_VALUES.has(low)) continue;
+      if (prop === 'display' && !SAFE_DISPLAY_VALUES.has(low)) continue;
+      if (prop === 'text-align' && !SAFE_TEXT_ALIGN_VALUES.has(low)) continue;
+      if (prop === 'white-space' && !SAFE_WHITE_SPACE_VALUES.has(low)) continue;
+      if (
+        (prop === 'border-style' || prop === 'border-bottom-style' || prop === 'border-top-style') &&
+        !SAFE_BORDER_STYLE_VALUES.has(low)
+      ) {
+        continue;
+      }
       safeDecls.push(`${prop}:${val}`);
     }
     return safeDecls.join(';');
@@ -111,19 +145,21 @@
       outEl = document.createElementNS(SVG_NS, tag);
       for (const attr of Array.from(srcNode.attributes)) {
         const name = attr.name;
+        const val = attr.value.trim();
         if (!ALLOWED_SVG_ATTRS.has(name) || /^on/i.test(name)) continue;
         if (name === 'style') {
+          if (tag !== 'svg' && tag !== 'g') continue;
           const cleanStyle = sanitizeInlineStyle(attr.value);
           if (cleanStyle) outEl.setAttribute('style', cleanStyle);
           continue;
         }
-        if ((name === 'fill' || name === 'stroke') && !SAFE_SVG_PAINT_RE.test(attr.value.trim())) {
-          continue;
-        }
-        if ((name === 'cx' || name === 'cy' || name === 'r') && !SAFE_SVG_NUM_RE.test(attr.value.trim())) {
-          continue;
-        }
-        if (name === 'transform' && /url\s*\(|javascript:/i.test(attr.value)) continue;
+        if (name === 'class' && !SAFE_CLASS_RE.test(val)) continue;
+        if (name === 'viewBox' && !SAFE_VIEWBOX_RE.test(val)) continue;
+        if (name === 'preserveAspectRatio' && !SAFE_PAR_RE.test(val)) continue;
+        if (name === 'd' && !SAFE_PATH_D_RE.test(val)) continue;
+        if ((name === 'fill' || name === 'stroke') && !SAFE_SVG_PAINT_RE.test(val)) continue;
+        if (SVG_NUM_ATTRS.has(name) && !SAFE_SVG_NUM_RE.test(val)) continue;
+        if (name === 'transform' && !SAFE_SVG_TRANSFORM_RE.test(val)) continue;
         outEl.setAttribute(name, attr.value);
       }
     } else if (ALLOWED_HTML_TAGS.has(tag)) {
@@ -133,10 +169,22 @@
         const name = attr.name.toLowerCase();
         if (!ALLOWED_HTML_ATTRS.has(name) || name.startsWith('on')) continue;
         if (name === 'style') {
+          if (!STYLE_ALLOWED_HTML_TAGS.has(tag)) continue;
           const cleanStyle = sanitizeInlineStyle(attr.value);
           if (cleanStyle) outEl.setAttribute('style', cleanStyle);
-        } else {
-          outEl.setAttribute(name, attr.value);
+        } else if (name === 'colspan' || name === 'rowspan') {
+          if (!TABLE_CELL_TAGS.has(tag)) continue;
+          const trimmed = attr.value.trim();
+          if (/^[1-9]\d?$/.test(trimmed)) {
+            const num = Number(trimmed);
+            if (num >= 1 && num <= 20) outEl.setAttribute(name, String(num));
+          }
+        } else if (name === 'class') {
+          if (SAFE_CLASS_RE.test(attr.value)) outEl.setAttribute('class', attr.value);
+        } else if (name === 'aria-hidden') {
+          if (attr.value === 'true' || attr.value === 'false') {
+            outEl.setAttribute('aria-hidden', attr.value);
+          }
         }
       }
     } else if (
@@ -151,7 +199,7 @@
       // Drop dangerous subtrees completely
       return;
     } else {
-      // Unwrap benign prose wrappers (e.g. a, li, mark) into their children
+      // Unwrap benign prose wrappers (e.g. a, section, article) into their children
       for (const child of Array.from(srcNode.childNodes)) {
         sanitizeNodeInto(child, targetParent, currentNs);
       }
@@ -164,11 +212,37 @@
     targetParent.appendChild(outEl);
   }
 
+  function wrapOrphanFragmentHtml(rawHtml) {
+    if (!rawHtml || typeof rawHtml !== 'string') return '';
+    const trimmed = rawHtml.trimStart();
+    const m = trimmed.match(/^<([a-z][a-z0-9]*)(?=[\s/>])/i);
+    if (!m) return rawHtml;
+    const firstTag = m[1].toLowerCase();
+    if (firstTag === 'td' || firstTag === 'th') {
+      return `<table><tbody><tr>${rawHtml}</tr></tbody></table>`;
+    }
+    if (firstTag === 'tr') {
+      return `<table><tbody>${rawHtml}</tbody></table>`;
+    }
+    if (
+      firstTag === 'thead' ||
+      firstTag === 'tbody' ||
+      firstTag === 'tfoot' ||
+      firstTag === 'caption'
+    ) {
+      return `<table>${rawHtml}</table>`;
+    }
+    if (firstTag === 'li') {
+      return `<ul>${rawHtml}</ul>`;
+    }
+    return rawHtml;
+  }
+
   function sanitizeHtmlToFragment(rawHtml) {
     const frag = document.createDocumentFragment();
     if (!rawHtml || typeof rawHtml !== 'string') return frag;
     const parser = new DOMParser();
-    const doc = parser.parseFromString(rawHtml, 'text/html');
+    const doc = parser.parseFromString(wrapOrphanFragmentHtml(rawHtml), 'text/html');
     for (const child of Array.from(doc.body.childNodes)) {
       sanitizeNodeInto(child, frag, null);
     }
@@ -180,6 +254,157 @@
     const holder = document.createElement('div');
     holder.appendChild(frag);
     return holder.innerHTML;
+  }
+
+  /* ========================================================================
+     1b. Lazy On-Demand KaTeX Runtime Loader & Safe Math Renderer
+     Zero KB on initial page load; loads katex.min.<hash8>.js ONLY when a
+     rendered notebook quote/note contains raw $...$ / $$...$$ delimiters.
+     ======================================================================== */
+
+  const katexJsUrl = document.body?.dataset?.katexJsUrl || '';
+  let katexLoadPromise = null;
+
+  function ensureKatexLoaded() {
+    if (window.katex && typeof window.katex.renderToString === 'function') {
+      return Promise.resolve(window.katex);
+    }
+    if (!katexJsUrl) return Promise.resolve(null);
+    if (!katexLoadPromise) {
+      katexLoadPromise = new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = katexJsUrl;
+        script.async = true;
+        script.onload = () => {
+          resolve(
+            window.katex && typeof window.katex.renderToString === 'function'
+              ? window.katex
+              : null
+          );
+        };
+        script.onerror = () => {
+          katexLoadPromise = null;
+          resolve(null);
+        };
+        document.head.appendChild(script);
+      });
+    }
+    return katexLoadPromise;
+  }
+
+  function isEscapedAt(str, idx) {
+    let slashes = 0;
+    for (let j = idx - 1; j >= 0 && str[j] === '\\'; j -= 1) {
+      slashes += 1;
+    }
+    return slashes % 2 === 1;
+  }
+
+  function tokenizeLatexText(text) {
+    if (!text || typeof text !== 'string' || !text.includes('$')) {
+      return { hasMath: false, tokens: [{ type: 'text', value: String(text || '') }] };
+    }
+    const tokens = [];
+    let buf = '';
+    let hasMath = false;
+    let i = 0;
+    const len = text.length;
+
+    const flushBuf = () => {
+      if (buf) {
+        tokens.push({ type: 'text', value: buf });
+        buf = '';
+      }
+    };
+
+    while (i < len) {
+      if (text[i] === '$' && !isEscapedAt(text, i)) {
+        // Check display math $$...$$
+        if (text[i + 1] === '$') {
+          let close = -1;
+          for (let j = i + 2; j < len - 1; j += 1) {
+            if (text[j] === '$' && text[j + 1] === '$' && !isEscapedAt(text, j)) {
+              close = j;
+              break;
+            }
+          }
+          if (close !== -1) {
+            const tex = text.slice(i + 2, close).trim();
+            if (tex) {
+              flushBuf();
+              tokens.push({ type: 'math', displayMode: true, tex });
+              hasMath = true;
+              i = close + 2;
+              continue;
+            }
+          }
+        } else {
+          // Check inline math $...$ (disallow immediate leading/trailing whitespace or blank line)
+          const nextCh = text[i + 1];
+          if (nextCh && !/\s/.test(nextCh) && nextCh !== '$') {
+            let close = -1;
+            for (let j = i + 1; j < len; j += 1) {
+              if (text[j] === '\n' && text[j + 1] === '\n') break;
+              if (text[j] === '$' && !isEscapedAt(text, j)) {
+                if (!/\s/.test(text[j - 1])) {
+                  close = j;
+                }
+                break;
+              }
+            }
+            if (close !== -1) {
+              const tex = text.slice(i + 1, close);
+              if (tex) {
+                flushBuf();
+                tokens.push({ type: 'math', displayMode: false, tex });
+                hasMath = true;
+                i = close + 1;
+                continue;
+              }
+            }
+          }
+        }
+      }
+      buf += text[i];
+      i += 1;
+    }
+    flushBuf();
+    return { hasMath, tokens };
+  }
+
+  function renderPlainWithMathInto(el, text, katexLib) {
+    if (!el || !el.isConnected) return;
+    const { hasMath, tokens } = tokenizeLatexText(text);
+    if (!hasMath || !katexLib || typeof katexLib.renderToString !== 'function') {
+      el.textContent = text;
+      el.classList.remove('has-math');
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const tok of tokens) {
+      if (tok.type === 'math') {
+        try {
+          const rendered = katexLib.renderToString(tok.tex, {
+            displayMode: tok.displayMode,
+            throwOnError: false,
+            trust: false,
+          });
+          frag.appendChild(sanitizeHtmlToFragment(rendered));
+        } catch {
+          frag.appendChild(
+            document.createTextNode(tok.displayMode ? `$$${tok.tex}$$` : `$${tok.tex}$`)
+          );
+        }
+      } else {
+        const lines = tok.value.split('\n');
+        for (let idx = 0; idx < lines.length; idx += 1) {
+          if (idx > 0) frag.appendChild(document.createElement('br'));
+          if (lines[idx]) frag.appendChild(document.createTextNode(lines[idx]));
+        }
+      }
+    }
+    el.classList.add('has-math');
+    el.replaceChildren(frag);
   }
 
   /* ========================================================================
@@ -333,6 +558,105 @@
     };
   }
 
+  function findBoundaryKatex(container, offset, isEnd) {
+    if (!container) return null;
+    const el = container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
+    const direct = el?.closest?.('.katex-display') || el?.closest?.('.katex');
+    if (direct) return direct;
+    if (container.nodeType === Node.ELEMENT_NODE) {
+      const idx = isEnd ? offset - 1 : offset;
+      const child =
+        idx >= 0 && idx < container.childNodes.length ? container.childNodes[idx] : null;
+      if (child && child.nodeType === Node.ELEMENT_NODE) {
+        if (child.matches('.katex-display, .katex')) return child;
+        const nested = child.closest('.katex-display') || child.closest('.katex');
+        if (nested) return nested;
+      }
+    }
+    return null;
+  }
+
+  function getOrphanKind(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) return '';
+    const tag = node.tagName.toUpperCase();
+    if (tag === 'TD' || tag === 'TH') return 'cell';
+    if (tag === 'TR') return 'row';
+    if (tag === 'THEAD' || tag === 'TBODY' || tag === 'TFOOT' || tag === 'CAPTION') return 'section';
+    if (tag === 'LI') return 'list-item';
+    return '';
+  }
+
+  function normalizeOrphanStructureInContainer(holder, commonAncestor) {
+    const ancestorEl =
+      commonAncestor?.nodeType === Node.ELEMENT_NODE
+        ? commonAncestor
+        : commonAncestor?.parentElement;
+    const preferredListTag =
+      ancestorEl?.closest?.('ol, ul')?.tagName?.toLowerCase() === 'ol' ? 'ol' : 'ul';
+
+    const nodes = Array.from(holder.childNodes);
+    let idx = 0;
+    while (idx < nodes.length) {
+      const kind = getOrphanKind(nodes[idx]);
+      if (!kind) {
+        idx += 1;
+        continue;
+      }
+      const run = [nodes[idx]];
+      let j = idx + 1;
+      while (j < nodes.length) {
+        const nextKind = getOrphanKind(nodes[j]);
+        if (nextKind === kind) {
+          run.push(nodes[j]);
+          j += 1;
+        } else if (
+          nodes[j].nodeType === Node.TEXT_NODE &&
+          !nodes[j].nodeValue?.trim() &&
+          j + 1 < nodes.length &&
+          getOrphanKind(nodes[j + 1]) === kind
+        ) {
+          run.push(nodes[j]);
+          j += 1;
+        } else {
+          break;
+        }
+      }
+
+      const firstNode = run[0];
+      let wrapper = null;
+      let innerTarget = null;
+      if (kind === 'cell') {
+        const table = document.createElement('table');
+        const tbody = document.createElement('tbody');
+        const tr = document.createElement('tr');
+        tbody.appendChild(tr);
+        table.appendChild(tbody);
+        wrapper = table;
+        innerTarget = tr;
+      } else if (kind === 'row') {
+        const table = document.createElement('table');
+        const tbody = document.createElement('tbody');
+        table.appendChild(tbody);
+        wrapper = table;
+        innerTarget = tbody;
+      } else if (kind === 'section') {
+        wrapper = document.createElement('table');
+        innerTarget = wrapper;
+      } else if (kind === 'list-item') {
+        wrapper = document.createElement(preferredListTag);
+        innerTarget = wrapper;
+      }
+
+      if (wrapper && innerTarget) {
+        holder.insertBefore(wrapper, firstNode);
+        for (const n of run) {
+          innerTarget.appendChild(n);
+        }
+      }
+      idx = j;
+    }
+  }
+
   function extractSelectionSnapshot(rawRange, articleEl) {
     if (!rawRange || rawRange.collapsed || !articleEl) return null;
 
@@ -358,16 +682,12 @@
       return null;
     }
 
-    // Expand boundaries if selection starts or ends mid-formula inside .katex
-    const startKatex = startEl.closest('.katex-display') || startEl.closest('.katex');
+    // Expand boundaries if selection starts or ends mid-formula or at ELEMENT_NODE .katex boundary
+    const startKatex = findBoundaryKatex(range.startContainer, range.startOffset, false);
     if (startKatex && articleEl.contains(startKatex)) {
       range.setStartBefore(startKatex);
     }
-    const endEl =
-      range.endContainer.nodeType === Node.ELEMENT_NODE
-        ? range.endContainer
-        : range.endContainer.parentElement;
-    const endKatex = endEl?.closest('.katex-display') || endEl?.closest('.katex');
+    const endKatex = findBoundaryKatex(range.endContainer, range.endOffset, true);
     if (endKatex && articleEl.contains(endKatex)) {
       range.setEndAfter(endKatex);
     }
@@ -378,8 +698,26 @@
       junk.remove();
     }
 
+    // Guard against orphaned .katex-html lacking a .katex wrapper
+    for (const kh of holder.querySelectorAll('.katex-html')) {
+      if (!kh.closest('.katex')) {
+        const katexWrap = document.createElement('span');
+        katexWrap.className = 'katex';
+        kh.parentNode?.insertBefore(katexWrap, kh);
+        katexWrap.appendChild(kh);
+      }
+    }
+
+    // Wrap orphaned partial table/list selections BEFORE serialization so DOMParser never foster-parents them
+    normalizeOrphanStructureInContainer(holder, range.commonAncestorContainer);
+
     const quoteText = extractPlainWithLatexFromNode(holder);
     if (!quoteText || quoteText.length < 2) return null;
+
+    // Strip redundant .katex-mathml AFTER quoteText extracts TeX annotations (~50% HTML reduction)
+    for (const mathml of holder.querySelectorAll('.katex-mathml')) {
+      mathml.remove();
+    }
 
     const quoteHtml = sanitizeHtmlString(holder.innerHTML);
     const { headingId, headingText } = findNearestPrecedingHeading(
@@ -390,8 +728,8 @@
     const rect = range.getBoundingClientRect();
     return {
       quoteText: quoteText.slice(0, 8000),
-      // Never slice raw HTML mid-tag (corrupts large KaTeX matrices); drop to '' so quoteText renders cleanly
-      quoteHtml: quoteHtml.length <= 48000 ? quoteHtml : '',
+      // Never slice raw HTML mid-tag (corrupts large KaTeX matrices); drop to '' so lazy KaTeX renders quoteText cleanly
+      quoteHtml: quoteHtml.length <= 62000 ? quoteHtml : '',
       headingId,
       headingText,
       rect,
@@ -1030,6 +1368,72 @@
   let composerDraft = null; // { mode: 'new'|'highlight', pageSlug, pageTitle, headingId, headingText, quoteText, quoteHtml, tag, conceptId }
   let editingNoteId = null;
 
+  const NB_QUOTE_COLLAPSE_THRESHOLD = 196;
+  const NB_NOTE_COLLAPSE_THRESHOLD = 168;
+  const expandedQuoteIds = new Set();
+  const expandedNoteIds = new Set();
+  let measureRafId = 0;
+
+  function measureNotebookCollapsibles() {
+    measureRafId = 0;
+    if (!nbDrawer || !nbDrawer.open || !nbListEl) return;
+
+    const items = nbListEl.querySelectorAll('[data-nb-collapsible]');
+    for (const el of items) {
+      const kind = el.dataset.nbCollapsible;
+      const noteId = el.dataset.noteId || '';
+      const btn = el.nextElementSibling?.matches?.('.nb-expand-btn')
+        ? el.nextElementSibling
+        : null;
+      if (!btn || !noteId) continue;
+
+      const threshold =
+        kind === 'note' ? NB_NOTE_COLLAPSE_THRESHOLD : NB_QUOTE_COLLAPSE_THRESHOLD;
+      const idSet = kind === 'note' ? expandedNoteIds : expandedQuoteIds;
+
+      const fullHeight = el.scrollHeight;
+      if (fullHeight > threshold) {
+        const isExpanded = idSet.has(noteId);
+        el.classList.toggle('is-collapsed', !isExpanded);
+        btn.hidden = false;
+        btn.setAttribute('aria-expanded', String(isExpanded));
+        btn.textContent = isExpanded ? '收起' : '展开全文';
+      } else {
+        el.classList.remove('is-collapsed');
+        btn.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  }
+
+  function scheduleMeasureNotebookCollapsibles() {
+    if (!nbDrawer || !nbDrawer.open) return;
+    if (measureRafId) cancelAnimationFrame(measureRafId);
+    measureRafId = requestAnimationFrame(measureNotebookCollapsibles);
+  }
+
+  function hydratePendingMathTargets(targets) {
+    if (!targets || targets.length === 0) return;
+    const applyWith = (katexLib) => {
+      if (!katexLib) return;
+      let anyUpdated = false;
+      for (const item of targets) {
+        if (!item?.el?.isConnected) continue;
+        renderPlainWithMathInto(item.el, item.text, katexLib);
+        anyUpdated = true;
+      }
+      if (anyUpdated) {
+        scheduleMeasureNotebookCollapsibles();
+      }
+    };
+
+    if (window.katex && typeof window.katex.renderToString === 'function') {
+      applyWith(window.katex);
+    } else {
+      ensureKatexLoaded().then(applyWith);
+    }
+  }
+
   function setComposerTagUI(tag) {
     if (!nbComposerTags) return;
     const normalized = normalizeTag(tag);
@@ -1051,6 +1455,7 @@
       nbDrawer.showModal();
     }
     renderNotebookList();
+    scheduleMeasureNotebookCollapsibles();
   }
 
   function openComposerWithDraft(draft) {
@@ -1077,9 +1482,16 @@
 
     if (composerDraft.quoteHtml || composerDraft.quoteText) {
       if (composerDraft.quoteHtml) {
+        nbQuotePreview.classList.remove('has-math');
         nbQuotePreview.replaceChildren(sanitizeHtmlToFragment(composerDraft.quoteHtml));
       } else {
+        nbQuotePreview.classList.remove('has-math');
         nbQuotePreview.textContent = composerDraft.quoteText;
+        if (tokenizeLatexText(composerDraft.quoteText).hasMath) {
+          hydratePendingMathTargets([
+            { el: nbQuotePreview, text: composerDraft.quoteText },
+          ]);
+        }
       }
       nbQuotePreview.hidden = false;
       nbQuoteInputWrap.hidden = true;
@@ -1194,6 +1606,31 @@
     });
 
     const frag = document.createDocumentFragment();
+    const pendingMathTargets = [];
+
+    function appendCollapsibleExpandBtn(parentCard, targetEl, kind, noteId) {
+      targetEl.dataset.nbCollapsible = kind;
+      targetEl.dataset.noteId = noteId;
+      const expandBtn = document.createElement('button');
+      expandBtn.type = 'button';
+      expandBtn.className = 'nb-expand-btn';
+      expandBtn.setAttribute('aria-expanded', 'false');
+      expandBtn.textContent = '展开全文';
+      expandBtn.hidden = true;
+      expandBtn.addEventListener('click', () => {
+        const idSet = kind === 'note' ? expandedNoteIds : expandedQuoteIds;
+        const willExpand = !idSet.has(noteId);
+        if (willExpand) {
+          idSet.add(noteId);
+        } else {
+          idSet.delete(noteId);
+        }
+        targetEl.classList.toggle('is-collapsed', !willExpand);
+        expandBtn.setAttribute('aria-expanded', String(willExpand));
+        expandBtn.textContent = willExpand ? '收起' : '展开全文';
+      });
+      parentCard.appendChild(expandBtn);
+    }
 
     // Accessible inline Undo banner inside open modal drawer (per persistent-toast-notifications)
     if (lastDeletedNoteId) {
@@ -1282,7 +1719,7 @@
       top.appendChild(meta);
       card.appendChild(top);
 
-      // Quote block (sanitized KaTeX DOM via replaceChildren — zero innerHTML)
+      // Quote block (sanitized KaTeX DOM via replaceChildren — zero innerHTML; lazy KaTeX fallback)
       if (n.quoteHtml || n.quoteText) {
         const quoteBox = document.createElement('div');
         quoteBox.className = 'nb-note-quote';
@@ -1290,8 +1727,12 @@
           quoteBox.replaceChildren(sanitizeHtmlToFragment(n.quoteHtml));
         } else {
           quoteBox.textContent = n.quoteText;
+          if (tokenizeLatexText(n.quoteText).hasMath) {
+            pendingMathTargets.push({ el: quoteBox, text: n.quoteText });
+          }
         }
         card.appendChild(quoteBox);
+        appendCollapsibleExpandBtn(card, quoteBox, 'quote', n.id);
       }
 
       // Inline editor OR display mode
@@ -1363,7 +1804,11 @@
           const noteP = document.createElement('p');
           noteP.className = 'nb-card-note';
           noteP.textContent = n.note;
+          if (tokenizeLatexText(n.note).hasMath) {
+            pendingMathTargets.push({ el: noteP, text: n.note });
+          }
           card.appendChild(noteP);
+          appendCollapsibleExpandBtn(card, noteP, 'note', n.id);
         }
 
         const footer = document.createElement('div');
@@ -1399,6 +1844,12 @@
 
     nbListEl.replaceChildren(frag);
     nbEmptyEl.hidden = filtered.length > 0;
+    if (pendingMathTargets.length > 0) {
+      hydratePendingMathTargets(pendingMathTargets);
+    }
+    if (nbDrawer?.open) {
+      scheduleMeasureNotebookCollapsibles();
+    }
     if (filtered.length === 0) {
       const emptyTitle = document.getElementById('nb-empty-title');
       const emptyDesc = document.getElementById('nb-empty-desc');
@@ -1434,6 +1885,14 @@
       lastDeletedNoteId = null;
       editingNoteId = null;
     });
+
+    window.addEventListener(
+      'resize',
+      () => {
+        if (nbDrawer.open) scheduleMeasureNotebookCollapsibles();
+      },
+      { passive: true }
+    );
 
     document.addEventListener('click', (event) => {
       if (event.target.closest('[data-open-notebook]')) {
@@ -1551,13 +2010,19 @@
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
         const rawHtml = `<strong>${safeTerm}</strong>：${concept.briefHtml || ''}${concept.formulaHtml ? `<div>${concept.formulaHtml}</div>` : ''}`;
+        const recallHolder = document.createElement('div');
+        recallHolder.appendChild(sanitizeHtmlToFragment(rawHtml));
+        for (const mathml of recallHolder.querySelectorAll('.katex-mathml')) {
+          mathml.remove();
+        }
+        const cleanedRecallHtml = recallHolder.innerHTML;
         const res = createOrUpdateNote({
           pageSlug: concept.targetPage || app.currentSlug || '',
           pageTitle: concept.targetPageTitle || concept.category || '',
           headingId: '',
           headingText: concept.category || '',
           quoteText,
-          quoteHtml: sanitizeHtmlString(rawHtml),
+          quoteHtml: cleanedRecallHtml.length <= 62000 ? cleanedRecallHtml : '',
           note: '',
           tag: '概念',
           conceptId: concept.id || '',

@@ -286,6 +286,27 @@ dialog::backdrop {
     font-size: 0.94rem;
   }
 
+  .key-points {
+    padding: 0.9rem 1rem;
+    margin-block-end: 1.35rem;
+  }
+
+  .detail-box > summary.detail-summary {
+    padding: 0.54rem 0.8rem;
+    font-size: 0.84rem;
+  }
+
+  .detail-body {
+    padding: 0.8rem 0.9rem 0.95rem;
+    font-size: 0.93rem;
+  }
+
+  .nb-quote-preview :is(th, td),
+  .nb-note-quote :is(th, td) {
+    padding: 0.32rem 0.48rem;
+    font-size: 0.78rem;
+  }
+
   .exam-sprint-banner {
     padding: 1.05rem 1rem;
     margin-block-end: 1.85rem;
@@ -461,6 +482,10 @@ dialog::backdrop {
     gap: 0.45rem 0.75rem;
   }
 
+  .reading-prefs-trail {
+    margin-inline-start: 0;
+  }
+
   .reading-style-meta,
   .reading-style-bar-single .reading-style-meta {
     justify-content: flex-start;
@@ -548,7 +573,12 @@ dialog::backdrop {
     content: none;
   }
 
-  .solution-box {
+  .solution-box,
+  .key-points {
     break-inside: avoid;
+  }
+
+  .detail-box > summary {
+    break-after: avoid;
   }
 }

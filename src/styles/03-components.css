@@ -424,7 +424,9 @@
 
 /* Expand / Collapse All toggle button per accordion guide */
 [command="--toggle-all"][aria-expanded="true"] .label-expand,
-[command="--toggle-all"][aria-expanded="false"] .label-collapse {
+[command="--toggle-all"][aria-expanded="false"] .label-collapse,
+.detail-toggle-all-btn[aria-expanded="true"] .label-expand,
+.detail-toggle-all-btn[aria-expanded="false"] .label-collapse {
   display: none;
 }
 
@@ -434,7 +436,8 @@
 .inline-toc,
 .syllabus-part,
 .syllabus-chapter,
-.solution-box {
+.solution-box,
+.detail-box {
   --chevron-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
 }
 
@@ -443,7 +446,8 @@
 .inline-toc > summary,
 .syllabus-part > summary,
 .syllabus-chapter > summary,
-.solution-box > summary {
+.solution-box > summary,
+.detail-box > summary {
   list-style: none;
   display: flex;
   align-items: center;
@@ -458,7 +462,8 @@
 .inline-toc > summary::-webkit-details-marker,
 .syllabus-part > summary::-webkit-details-marker,
 .syllabus-chapter > summary::-webkit-details-marker,
-.solution-box > summary::-webkit-details-marker {
+.solution-box > summary::-webkit-details-marker,
+.detail-box > summary::-webkit-details-marker {
   display: none;
 }
 
@@ -468,7 +473,8 @@
 .inline-toc > summary::before,
 .syllabus-part > summary::before,
 .syllabus-chapter > summary::before,
-.solution-box > summary::before {
+.solution-box > summary::before,
+.detail-box > summary::before {
   content: "";
   inline-size: 0.95em;
   block-size: 0.95em;
@@ -485,7 +491,8 @@
 .inline-toc[open] > summary::before,
 .syllabus-part[open] > summary::before,
 .syllabus-chapter[open] > summary::before,
-.solution-box[open] > summary::before {
+.solution-box[open] > summary::before,
+.detail-box[open] > summary::before {
   rotate: 0deg;
 }
 
@@ -495,24 +502,25 @@
   .inline-toc > summary::before,
   .syllabus-part > summary::before,
   .syllabus-chapter > summary::before,
-  .solution-box > summary::before {
+  .solution-box > summary::before,
+  .detail-box > summary::before {
     transition: rotate 0.18s ease;
   }
 }
 
 /* Smooth disclosure animation with interpolate-size + constant layout containment */
-:is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box)::details-content {
+:is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box, .detail-box)::details-content {
   interpolate-size: allow-keywords;
   overflow: clip;
   contain: layout;
 }
 
-:is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box):not([open])::details-content {
+:is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box, .detail-box):not([open])::details-content {
   block-size: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  :is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box)::details-content {
+  :is(.toc-part, .toc-chapter, .inline-toc, .syllabus-part, .syllabus-chapter, .solution-box, .detail-box)::details-content {
     transition-property: block-size, content-visibility, display;
     transition-duration: 0.24s;
     transition-timing-function: ease-in-out;
@@ -1030,6 +1038,129 @@
 .solution-body .math-block,
 .solution-body .table-wrap {
   margin-block: 0.9rem;
+}
+
+/* ==========================================================================
+   Upfront Core Takeaways Card (:::key) — Editorial Focus Block
+   ========================================================================== */
+
+.key-points {
+  margin: 0 0 1.65rem;
+  padding: 1.05rem 1.25rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--accent-brand);
+  box-shadow: var(--shadow-sm);
+  min-inline-size: 0;
+}
+
+.key-points-title {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  line-height: 1.4;
+}
+
+.key-points-body {
+  font-size: 0.96rem;
+  line-height: 1.78;
+  color: var(--text-primary);
+  min-inline-size: 0;
+}
+
+.key-points-body > :first-child {
+  margin-block-start: 0;
+}
+
+.key-points-body > :last-child {
+  margin-block-end: 0;
+}
+
+.key-points-body :is(ul, ol) {
+  margin: 0;
+  padding-inline-start: 1.28rem;
+}
+
+.key-points-body li {
+  margin-block: 0.34rem;
+}
+
+.key-points-body li::marker {
+  color: var(--accent-brand);
+}
+
+/* ==========================================================================
+   Quiet Collapsible Proofs & Derivations (:::proof / :::detail)
+   Visually subordinate to core prose and clearly distinct from .solution-box.
+   ========================================================================== */
+
+.detail-box {
+  margin: 1rem 0 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  min-inline-size: 0;
+}
+
+.detail-box.detail-proof {
+  border-inline-start: 2.5px solid var(--border-strong);
+}
+
+.detail-box > summary.detail-summary {
+  padding: 0.56rem 0.9rem;
+  min-block-size: max(40px, var(--target-size));
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.45;
+  border-radius: calc(var(--radius-md) - 1px);
+  transition: background-color 0.15s var(--ease-claude), color 0.15s var(--ease-claude);
+}
+
+.detail-box[open] > summary.detail-summary {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  border-block-end: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.detail-box > summary.detail-summary:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+}
+
+.detail-summary-label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.detail-body {
+  padding: 0.9rem 1.1rem 1.05rem;
+  background: var(--bg-surface);
+  border-radius: 0 0 calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px);
+  min-inline-size: 0;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+.detail-body > :first-child {
+  margin-block-start: 0;
+}
+
+.detail-body > :last-child {
+  margin-block-end: 0;
+}
+
+.detail-body .math-block,
+.detail-body .table-wrap {
+  margin-block: 0.85rem;
 }
 
 /* ==========================================================================
@@ -1792,6 +1923,7 @@ dialog.sync-dialog[open]:where(:not([data-closing]))::backdrop {
 
 .nb-quote-preview,
 .nb-note-quote {
+  position: relative;
   padding: 0.65rem 0.85rem;
   border-inline-start: 3px solid var(--accent);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -1803,11 +1935,170 @@ dialog.sync-dialog[open]:where(:not([data-closing]))::backdrop {
   color: var(--text-primary);
   overflow-x: auto;
   max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow-wrap: break-word;
+}
+
+.nb-quote-preview {
+  max-block-size: 11rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.nb-quote-preview > :first-child,
+.nb-note-quote > :first-child {
+  margin-block-start: 0;
+}
+
+.nb-quote-preview > :last-child,
+.nb-note-quote > :last-child {
+  margin-block-end: 0;
+}
+
+.nb-quote-preview p,
+.nb-note-quote p {
+  margin: 0 0 0.5rem;
+}
+
+.nb-quote-preview :is(h2, h3, h4),
+.nb-note-quote :is(h2, h3, h4) {
+  margin: 0.5rem 0 0.3rem;
+  font-size: 0.96rem;
+  font-weight: var(--font-reading-bold-weight);
+  line-height: 1.38;
+}
+
+.nb-quote-preview :is(ul, ol),
+.nb-note-quote :is(ul, ol) {
+  margin: 0.35rem 0 0.5rem;
+  padding-inline-start: 1.3rem;
+}
+
+.nb-quote-preview li,
+.nb-note-quote li {
+  margin-block: 0.2rem;
+}
+
+.nb-quote-preview blockquote,
+.nb-note-quote blockquote {
+  margin: 0.45rem 0;
+  padding: 0.35rem 0.7rem;
+  border-inline-start: 2px solid var(--border-strong);
+  color: var(--text-secondary);
+}
+
+.nb-quote-preview hr,
+.nb-note-quote hr {
+  border: 0;
+  border-block-start: 1px solid var(--border-strong);
+  margin: 0.6rem 0;
+}
+
+.nb-quote-preview code,
+.nb-note-quote code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.08em 0.3em;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.nb-quote-preview pre,
+.nb-note-quote pre {
+  margin: 0.45rem 0;
+  padding: 0.55rem 0.7rem;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.nb-quote-preview pre code,
+.nb-note-quote pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.nb-quote-preview .table-wrap,
+.nb-note-quote .table-wrap {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  max-block-size: none;
+  overflow-x: auto;
+}
+
+.nb-quote-preview table,
+.nb-note-quote table {
+  border-collapse: separate;
+  border-spacing: 0;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  margin: 0.35rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.nb-quote-preview :is(th, td),
+.nb-note-quote :is(th, td) {
+  padding: 0.38rem 0.58rem;
+  border-block-end: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.nb-quote-preview th,
+.nb-note-quote th {
+  font-weight: 600;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+.nb-quote-preview :is(th, td):last-child,
+.nb-note-quote :is(th, td):last-child {
+  border-inline-end: 0;
+}
+
+.nb-quote-preview tr:last-child :is(th, td),
+.nb-note-quote tr:last-child :is(th, td) {
+  border-block-end: 0;
 }
 
 .nb-quote-preview .katex,
 .nb-note-quote .katex {
   font-size: 1.02em;
+}
+
+.nb-quote-preview .katex-display,
+.nb-note-quote .katex-display {
+  margin: 0.45rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Auto-collapse long notebook quotes (11rem / 176px) with subtle bottom fade */
+.nb-note-quote.is-collapsed {
+  max-block-size: 11rem;
+  overflow: hidden;
+}
+
+.nb-note-quote.is-collapsed::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 2.75rem;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--bg-subtle) 88%);
 }
 
 .nb-textarea,
@@ -1852,6 +2143,7 @@ dialog.sync-dialog[open]:where(:not([data-closing]))::backdrop {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+  min-inline-size: 0;
 }
 
 .nb-card-top {
@@ -1915,11 +2207,63 @@ dialog.sync-dialog[open]:where(:not([data-closing]))::backdrop {
 }
 
 .nb-card-note {
+  position: relative;
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.65;
   color: var(--text-primary);
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  min-inline-size: 0;
+}
+
+.nb-card-note.has-math {
+  white-space: normal;
+}
+
+.nb-card-note .katex-display {
+  margin: 0.4rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Auto-collapse long personal notes (9.5rem / 152px) with subtle bottom fade */
+.nb-card-note.is-collapsed {
+  max-block-size: 9.5rem;
+  overflow: hidden;
+}
+
+.nb-card-note.is-collapsed::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 2.4rem;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--bg-page) 88%);
+}
+
+.nb-expand-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: max(28px, var(--target-size));
+  padding: 0.12rem 0.52rem;
+  margin-block-start: -0.2rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.14s var(--ease-claude), color 0.14s var(--ease-claude);
+}
+
+.nb-expand-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
 }
 
 .nb-card-footer {
@@ -2131,9 +2475,9 @@ dialog.sync-dialog[open]:where(:not([data-closing])) {
 .reading-style-bar {
   display: flex;
   flex-direction: column;
-  gap: 0.48rem;
+  gap: 0.42rem;
   margin: 0 0 1.45rem;
-  padding: 0.62rem 0.85rem;
+  padding: 0.54rem 0.8rem;
   border-radius: var(--radius-md);
   background: var(--bg-subtle);
   border: 1px solid var(--border);
@@ -2144,7 +2488,38 @@ dialog.sync-dialog[open]:where(:not([data-closing])) {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem 0.9rem;
+  gap: 0.48rem 0.85rem;
+}
+
+.reading-prefs-trail {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-inline-start: auto;
+  min-inline-size: 0;
+}
+
+.reading-prefs-trail .reading-style-status {
+  margin-inline-start: 0;
+}
+
+.detail-toggle-all-btn {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding-inline: 0.58rem;
+}
+
+.detail-toggle-all-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+
+/* Clean right-aligned read CTA when completion helper text is omitted */
+.article-completion-strip {
+  justify-content: flex-end;
 }
 
 .reading-style-controls {
@@ -2272,6 +2647,14 @@ dialog.sync-dialog[open]:where(:not([data-closing])) {
   min-block-size: 1.15em;
 }
 
+.reading-style-status:not(.is-visible) {
+  max-inline-size: 0;
+  max-block-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .reading-style-status.is-visible {
   opacity: 1;
 }
@@ -2302,9 +2685,9 @@ dialog.sync-dialog[open]:where(:not([data-closing])) {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.48rem 0.9rem;
-  margin-block-end: 1.55rem;
-  padding: 0.48rem 0.85rem;
+  gap: 0.45rem 0.85rem;
+  margin-block-end: 1.45rem;
+  padding: 0.44rem 0.8rem;
   border-radius: var(--radius-md);
   background: var(--bg-subtle);
   border: 1px solid var(--border);
@@ -2329,7 +2712,7 @@ dialog.sync-dialog[open]:where(:not([data-closing])) {
   justify-content: flex-end;
   gap: 0.35rem 0.65rem;
   min-inline-size: 0;
-  flex: 1 1 13rem;
+  flex: 0 1 auto;
 }
 
 .home-prefs-meta .reading-style-status {
