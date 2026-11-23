@@ -39,6 +39,7 @@ const SKIP_CLASSES = new Set([
   "page-meta",
   "page-summary",
   "callout-title",
+  "callout-title-label",
   "solution-summary",
   "solution-summary-label",
   "detail-summary",
@@ -393,7 +394,11 @@ export function injectConcepts(html, options = {}) {
     const attribs = el.attribs || {};
     if ("open" in attribs) return false;
     const classes = (attribs.class || "").split(/\s+/);
-    return classes.includes("solution-box") || classes.includes("detail-box");
+    return (
+      classes.includes("solution-box") ||
+      classes.includes("detail-box") ||
+      classes.includes("callout")
+    );
   }
 
   const deferredCollapsibleBoxes = [];

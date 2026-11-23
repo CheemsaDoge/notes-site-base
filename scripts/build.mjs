@@ -505,6 +505,15 @@ function classifyCallout(labelText) {
   return null;
 }
 
+function isProblemCallout(labelText) {
+  const label = labelText
+    .replace(/[：:]\s*$/, "")
+    .trim()
+    .replace(/^【([^】]+)】/, "$1")
+    .trim();
+  return /^(?:原题|拓展题干)(?:$|[（(：:\s·\-])/.test(label);
+}
+
 function normalizeCjkBoldLine(line) {
   if (!line.includes("**")) return line;
 
@@ -627,11 +636,14 @@ export function renderInlineWithMath(text, sourceLabel = "concepts.json") {
 /**
  * Render full micro-page Markdown to semantic, mobile-ready HTML with:
  * - Build-time KaTeX math (.math-block & inline .katex)
- * - Semantic <aside class="callout callout-*"> blocks
+ * - Collapsible <details class="callout callout-*"> tip/hint boxes (while keeping problem prompts always visible as <aside>)
  * - Responsive .table-wrap regions around every <table>
  * - Deterministic heading IDs (sec-1, sec-2, ...) + .heading-anchor + extracted TOC list
  */
-export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle = "" } = {}) {
+export function renderMarkdownPage(
+  markdown,
+  { sourceLabel = "<page>", pageTitle = "", collapsibleCallouts = true } = {}
+) {
   const cleanedMd = stripLeadingFrontmatter(markdown);
   const { text: tokenized, placeholders } = extractMathPlaceholders(cleanedMd, {
     sourceLabel,
@@ -731,7 +743,8 @@ export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle
     });
   }
 
-  // 3. Transform callout blockquotes into semantic <aside class="callout callout-*">
+  // 3. Transform callout blockquotes into collapsible <details class="callout callout-*">
+  // (keeping problem statements such as 「原题」/「拓展题干」 always visible as <aside>)
   const blockquotes = $("blockquote").toArray().reverse();
   for (const bq of blockquotes) {
     const $bq = $(bq);
@@ -775,12 +788,22 @@ export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle
     }
 
     const bodyHtml = ($bq.html() || "").trim();
-    $bq.replaceWith(
-      `<aside class="callout callout-${calloutType}" data-callout="${calloutType}">\n` +
-        `<div class="callout-title">${cleanTitleHtml}</div>\n` +
-        `<div class="callout-body">${bodyHtml}</div>\n` +
-        `</aside>`
-    );
+    const shouldCollapse = Boolean(collapsibleCallouts) && !isProblemCallout(labelText);
+    if (shouldCollapse) {
+      $bq.replaceWith(
+        `<details class="callout callout-${calloutType}" data-callout="${calloutType}">\n` +
+          `<summary class="callout-title"><span class="callout-title-label">${cleanTitleHtml}</span></summary>\n` +
+          `<div class="callout-body">${bodyHtml}</div>\n` +
+          `</details>`
+      );
+    } else {
+      $bq.replaceWith(
+        `<aside class="callout callout-${calloutType}" data-callout="${calloutType}">\n` +
+          `<div class="callout-title">${cleanTitleHtml}</div>\n` +
+          `<div class="callout-body">${bodyHtml}</div>\n` +
+          `</aside>`
+      );
+    }
   }
 
   // 4. Wrap every <table> in a scrollable accessible region
@@ -890,7 +913,8 @@ export function renderMarkdownPage(markdown, { sourceLabel = "<page>", pageTitle
         `<a class="heading-anchor" href="#${id}" aria-label="本节链接">#</a>`
     );
 
-    const insideCollapsed = $h.closest("details.solution-box, details.detail-box").length > 0;
+    const insideCollapsed =
+      $h.closest("details.solution-box, details.detail-box, details.callout").length > 0;
     if ((level === 2 || level === 3) && !insideCollapsed) {
       headings.push({
         level,
@@ -1553,6 +1577,7 @@ export async function runBuild(cliOpts = {}) {
     sitemap: rawSitemap,
   });
   const dualReadingStyle = Boolean(config.features.dualReadingStyle);
+  const collapsibleCallouts = config.features.collapsibleCallouts !== false;
 
   const { site, examOverview, treeParts, flatPages } = normalizeSitemap(rawSitemap, config);
   site.totalConcepts = rawConcepts.length;
@@ -1773,6 +1798,7 @@ export async function runBuild(cliOpts = {}) {
       const axiomaticRendered = renderMarkdownPage(primaryMarkdown, {
         sourceLabel: pg.file,
         pageTitle: pg.title,
+        collapsibleCallouts,
       });
       const axiomaticInjected = injectConcepts(axiomaticRendered.html, {
         currentPageSlug: pg.slug,
@@ -1805,6 +1831,7 @@ export async function runBuild(cliOpts = {}) {
       const ssrRendered = renderMarkdownPage(explainedMarkdown, {
         sourceLabel: explainedSourceLabel,
         pageTitle: pg.title,
+        collapsibleCallouts,
       });
       const ssrInjected = injectConcepts(ssrRendered.html, {
         currentPageSlug: pg.slug,
@@ -1833,6 +1860,7 @@ export async function runBuild(cliOpts = {}) {
       const ssrRendered = renderMarkdownPage(primaryMarkdown, {
         sourceLabel: pg.file,
         pageTitle: pg.title,
+        collapsibleCallouts,
       });
       const ssrInjected = injectConcepts(ssrRendered.html, {
         currentPageSlug: pg.slug,

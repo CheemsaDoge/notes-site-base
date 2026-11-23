@@ -147,6 +147,7 @@ const FORBIDDEN_CONCEPT_ANCESTOR_CLASSES = new Set([
   "page-meta",
   "page-summary",
   "callout-title",
+  "callout-title-label",
   "solution-summary",
   "solution-summary-label",
   "detail-summary",
@@ -902,6 +903,7 @@ export function runVerify(cliOpts = {}) {
   let totalSolutionBoxes = 0;
   let totalDetailBoxes = 0;
   let totalKeyPoints = 0;
+  let totalCollapsibleCallouts = 0;
   let totalAxiomaticViewsVerified = 0;
   let totalAxiomaticDisplayMath = 0;
   let totalAxiomaticInlineMath = 0;
@@ -909,6 +911,7 @@ export function runVerify(cliOpts = {}) {
   let totalAxiomaticSolutionBoxes = 0;
   let totalAxiomaticDetailBoxes = 0;
   let totalAxiomaticKeyPoints = 0;
+  let totalAxiomaticCollapsibleCallouts = 0;
   const referencedViewFiles = new Set();
   const pageStats = [];
 
@@ -1266,6 +1269,26 @@ export function runVerify(cliOpts = {}) {
         }
       });
 
+      const $collapsibleCallouts = $scope.find("details.callout");
+      totalCollapsibleCallouts += $collapsibleCallouts.length;
+      $collapsibleCallouts.each((idx, boxEl) => {
+        const $box = $(boxEl);
+        const $summary = $box.children("summary").first();
+        if ($summary.length === 0) {
+          errors.push(`${relFile}: details.callout #${idx + 1} missing <summary> child`);
+        } else {
+          if ($summary.find("h1, h2, h3, h4, h5, h6").length > 0) {
+            errors.push(`${relFile}: details.callout #${idx + 1} <summary> must not contain heading tags`);
+          }
+          if ($summary.find("a.concept-ref").length > 0) {
+            errors.push(`${relFile}: details.callout #${idx + 1} <summary> must not contain .concept-ref links`);
+          }
+        }
+        if ($box.children(".callout-body").length === 0) {
+          errors.push(`${relFile}: details.callout #${idx + 1} missing .callout-body container`);
+        }
+      });
+
       const seenConcepts = new Map();
 
       $scope.find("a.concept-ref[data-concept]").each((_, el) => {
@@ -1454,6 +1477,26 @@ export function runVerify(cliOpts = {}) {
                   }
                 });
 
+                const $vCallouts = $vArticle.find("details.callout");
+                totalAxiomaticCollapsibleCallouts += $vCallouts.length;
+                $vCallouts.each((idx, boxEl) => {
+                  const $box = $v(boxEl);
+                  const $summary = $box.children("summary").first();
+                  if ($summary.length === 0) {
+                    errors.push(`${viewLabel}: details.callout #${idx + 1} missing <summary>`);
+                  } else {
+                    if ($summary.find("h1, h2, h3, h4, h5, h6").length > 0) {
+                      errors.push(`${viewLabel}: details.callout #${idx + 1} <summary> must not contain headings`);
+                    }
+                    if ($summary.find("a.concept-ref").length > 0) {
+                      errors.push(`${viewLabel}: details.callout #${idx + 1} <summary> must not contain .concept-ref`);
+                    }
+                  }
+                  if ($box.children(".callout-body").length === 0) {
+                    errors.push(`${viewLabel}: details.callout #${idx + 1} missing .callout-body`);
+                  }
+                });
+
                 const viewIds = new Set();
                 $vArticle.find("[id]").each((_, el) => {
                   const id = $v(el).attr("id");
@@ -1617,14 +1660,14 @@ export function runVerify(cliOpts = {}) {
   console.log(
     `Summary (${dualReadingStyle ? "explained SSR" : "single-mode SSR"}): ${pageStats.length}/${pages.length} pages (core:${coreCount} high:${highCount} normal:${normalCount}) | ` +
       `${totalWords} words | ${totalDisplayMath} display + ${totalInlineMath} inline math | ` +
-      `${totalSolutionBoxes} solution / ${totalDetailBoxes} detail / ${totalKeyPoints} key blocks | ` +
+      `${totalSolutionBoxes} solution / ${totalDetailBoxes} detail / ${totalKeyPoints} key / ${totalCollapsibleCallouts} callout blocks | ` +
       `${totalConceptLinks} first-mention concept links | ${totalLinksChecked} internal links checked`
   );
   if (dualReadingStyle) {
     console.log(
       `Summary (axiomatic views): ${totalAxiomaticViewsVerified}/${pages.length} JSON views verified | ` +
         `${totalAxiomaticDisplayMath} display + ${totalAxiomaticInlineMath} inline math | ` +
-        `${totalAxiomaticSolutionBoxes} solution / ${totalAxiomaticDetailBoxes} detail / ${totalAxiomaticKeyPoints} key blocks | ` +
+        `${totalAxiomaticSolutionBoxes} solution / ${totalAxiomaticDetailBoxes} detail / ${totalAxiomaticKeyPoints} key / ${totalAxiomaticCollapsibleCallouts} callout blocks | ` +
         `${totalAxiomaticConceptLinks} first-mention concept links`
     );
   }

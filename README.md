@@ -77,6 +77,7 @@ my-course/
     "dualReadingStyle": true,
     "defaultReadingStyle": "explained",
     "defaultFontTheme": "serif",
+    "collapsibleCallouts": true,
     "readingStyleLabels": {
       "explained": "讲解式",
       "axiomatic": "公理版",

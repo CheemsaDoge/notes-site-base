@@ -22,6 +22,7 @@ export const DEFAULT_CONFIG = Object.freeze({
     dualReadingStyle: true,
     defaultReadingStyle: "explained",
     defaultFontTheme: "serif",
+    collapsibleCallouts: true,
     readingStyleLabels: {
       explained: "讲解式",
       axiomatic: "公理版",
@@ -190,10 +191,16 @@ export function normalizeConfig(rawConfig = {}, rawSitemap = null) {
     ? rawFeatures.defaultFontTheme
     : d.features.defaultFontTheme;
 
+  const collapsibleCallouts =
+    typeof rawFeatures.collapsibleCallouts === "boolean"
+      ? rawFeatures.collapsibleCallouts
+      : d.features.collapsibleCallouts;
+
   const features = {
     dualReadingStyle,
     defaultReadingStyle,
     defaultFontTheme,
+    collapsibleCallouts,
     readingStyleLabels: {
       explained: cleanString(rawLabels.explained, d.features.readingStyleLabels.explained),
       axiomatic: cleanString(rawLabels.axiomatic, d.features.readingStyleLabels.axiomatic),

@@ -276,6 +276,20 @@ dialog::backdrop {
     padding: 0.85rem 0.95rem;
   }
 
+  details.callout {
+    padding: 0;
+  }
+
+  details.callout > summary.callout-title {
+    padding: 0.56rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  details.callout > .callout-body {
+    padding: 0.72rem 0.9rem 0.85rem;
+    font-size: 0.93rem;
+  }
+
   .solution-box > summary {
     padding: 0.6rem 0.85rem;
     font-size: 0.9rem;
@@ -574,11 +588,13 @@ dialog::backdrop {
   }
 
   .solution-box,
-  .key-points {
+  .key-points,
+  aside.callout {
     break-inside: avoid;
   }
 
-  .detail-box > summary {
+  .detail-box > summary,
+  details.callout > summary {
     break-after: avoid;
   }
 }

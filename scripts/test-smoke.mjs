@@ -26,6 +26,7 @@ async function testConfigAndConcepts() {
   assert.equal(def.storage.themeKey, "notes-color-scheme");
   assert.equal(def.storage.syncHashPrefix, "notes-sync-v1:");
   assert.equal(def.features.dualReadingStyle, true);
+  assert.equal(def.features.collapsibleCallouts, true);
   assert.deepEqual(def.concepts.nonNegatedTerms, []);
   assert.deepEqual(def.concepts.inertCompoundBlockers, []);
 
@@ -52,7 +53,7 @@ async function testConfigAndConcepts() {
     { currentPageSlug: "p01", matcher }
   );
   assert.deepEqual(positive.linkedConceptIds, ["linear-map", "elem"]);
-  console.log("[smoke] 1/7 config & configurable inject-concepts PASS");
+  console.log("[smoke] 1/8 config & configurable inject-concepts PASS");
 }
 
 async function testDualModeStarter() {
@@ -85,10 +86,12 @@ async function testDualModeStarter() {
     const p2Html = fs.readFileSync(path.join(tmpOut, "pages", "p02-linear-transformation.html"), "utf8");
     const $p2 = cheerio.load(p2Html);
     assert.equal($p2("details.solution-box").length, 1);
+    assert.equal($p2("details.callout.callout-tip").length, 1, "Starter callout should collapse into details.callout");
+    assert.equal($p2("details.callout.callout-tip").attr("open"), undefined, "Collapsible callout must default to closed");
     assert.equal($p2('a.concept-ref[data-concept="derivative"]').length, 1);
     assert.equal($p2('a.concept-ref[data-concept="continuity"]').length, 1);
 
-    console.log("[smoke] 2/7 starter dual-mode build + verify PASS");
+    console.log("[smoke] 2/8 starter dual-mode build + verify PASS");
   } finally {
     fs.rmSync(tmpOut, { recursive: true, force: true });
   }
@@ -160,7 +163,7 @@ async function testSingleModeInitAndCli() {
     assert.equal($pg("[data-reading-style-btn]").length, 0);
     assert.equal($pg("[data-font-theme-btn]").length, 3);
 
-    console.log("[smoke] 3/7 CLI init (--single-mode) + single-mode check PASS");
+    console.log("[smoke] 3/8 CLI init (--single-mode) + single-mode check PASS");
   } finally {
     fs.rmSync(tmpWork, { recursive: true, force: true });
   }
@@ -202,7 +205,7 @@ async function testExtraStylesAndForbidEmDash() {
     const mobileIdx = cssHrefs.findIndex((h) => /04-mobile\.[0-9a-f]{8}\.css$/.test(h));
     const customIdx = cssHrefs.findIndex((h) => /custom\.[0-9a-f]{8}\.css$/.test(h));
     assert.ok(mobileIdx !== -1 && customIdx > mobileIdx, "extraStyles must load after 04-mobile.<hash>.css");
-    console.log("[smoke] 4/7 paths.extraStyles fingerprinting & cascade order PASS");
+    console.log("[smoke] 4/8 paths.extraStyles fingerprinting & cascade order PASS");
 
     // Negative test: forbidEmDash=true catches prose "——", forbidEmDash=false allows it
     const p1ExpPath = path.join(targetDir, "content-explained", "part1", "p01-derivative-intuition.md");
@@ -216,7 +219,7 @@ async function testExtraStylesAndForbidEmDash() {
     fs.writeFileSync(cfgPath, `${JSON.stringify(cfg, null, 2)}\n`, "utf8");
     const verifyAllowed = runVerify({ root: targetDir });
     assert.equal(verifyAllowed.ok, true, "Expected forbidEmDash=false to allow em-dash");
-    console.log("[smoke] 5/7 styleAudit.forbidEmDash gate (true/false) PASS");
+    console.log("[smoke] 5/8 styleAudit.forbidEmDash gate (true/false) PASS");
   } finally {
     fs.rmSync(tmpWork, { recursive: true, force: true });
   }
@@ -236,7 +239,7 @@ async function testNpmPackContents() {
   assert.ok(files.has("bin/notes-site.mjs"), "npm pack must include bin/notes-site.mjs");
   assert.ok(!files.has("scripts/test-smoke.mjs"), "npm pack must exclude internal scripts/test-smoke.mjs");
   assert.ok(!files.has("src/worker/test-worker.mjs"), "npm pack must exclude internal src/worker/test-worker.mjs");
-  console.log(`[smoke] 6/7 npm pack tarball manifest (${files.size} files, starter/gitignore preserved, tests excluded) PASS`);
+  console.log(`[smoke] 6/8 npm pack tarball manifest (${files.size} files, starter/gitignore preserved, tests excluded) PASS`);
 }
 
 async function testPhase7ContainersAndLazyKatex() {
@@ -348,7 +351,107 @@ async function testPhase7ContainersAndLazyKatex() {
       fs.writeFileSync(p1ExpPath, orig, "utf8");
     }
 
-    console.log("[smoke] 7/7 Phase 7 :::key/:::proof/:::detail containers, unclosed fence gates & lazy KaTeX JS PASS");
+    console.log("[smoke] 7/8 Phase 7 :::key/:::proof/:::detail containers, unclosed fence gates & lazy KaTeX JS PASS");
+  } finally {
+    fs.rmSync(tmpWork, { recursive: true, force: true });
+  }
+}
+
+async function testCollapsibleCallouts() {
+  const tmpWork = makeTmpDir("notes-site-callout-");
+  const targetDir = path.join(tmpWork, "callout-course");
+  try {
+    execFileSync(
+      process.execPath,
+      [CLI_PATH, "init", targetDir, "--title", "折叠提示测试", "--slug", "callout-demo"],
+      { stdio: "pipe" }
+    );
+
+    const p1ExpPath = path.join(targetDir, "content-explained", "part1", "p01-derivative-intuition.md");
+    fs.writeFileSync(
+      p1ExpPath,
+      `## 提示与原题对照
+
+> **高频考点**：提前提及线性变换但不应抢走可见正文的首提链接。
+
+> **易错避坑**：注意校验前提条件。
+
+> **解题套路（证 $A = B$）**：双向包含即可。
+
+> **【严谨性勘误/补充】**：注意等号成立条件。
+
+> **作业原题覆盖（§1.1）**：本节涵盖课后原题范围说明，属于概览提示应折叠。
+
+> **原题（书 p.12）**：设函数连续，判断其导数是否存在。
+
+> **拓展题干**：求极限 $\\lim_{h \\to 0} \\frac{f(x_0+h)-f(x_0)}{h}$。
+
+可见正文里的线性变换概念应获得唯一首次链接。
+
+## 延伸阅读
+
+- 下一节：[线性变换与矩阵表示](./p02-linear-transformation.html)
+`,
+      "utf8"
+    );
+
+    await runBuild({ root: targetDir });
+    const vOk = runVerify({ root: targetDir });
+    assert.equal(vOk.ok, true, `Collapsible callouts verify failed: ${JSON.stringify(vOk.errors)}`);
+    assert.equal(vOk.warnings.length, 0, `Unexpected collapsible callout warnings: ${JSON.stringify(vOk.warnings)}`);
+
+    const p1Html = fs.readFileSync(
+      path.join(targetDir, "dist", "pages", "p01-derivative-intuition.html"),
+      "utf8"
+    );
+    const $p1 = cheerio.load(p1Html);
+
+    // 5 tip/exam/warn/errata/coverage-note callouts collapse to closed <details class="callout">
+    const $collapsed = $p1("article details.callout");
+    assert.equal($collapsed.length, 5, "Expected 5 collapsible details.callout blocks");
+    $collapsed.each((_, el) => {
+      assert.equal($p1(el).attr("open"), undefined, "details.callout must start closed");
+      assert.equal($p1(el).children("summary.callout-title").length, 1);
+      assert.equal($p1(el).children("summary.callout-title").children(".callout-title-label").length, 1);
+      assert.equal($p1(el).children(".callout-body").length, 1);
+    });
+    assert.ok(
+      $p1("article details.callout.callout-tip > summary.callout-title .callout-title-label .katex").length >= 1,
+      "Inline KaTeX inside callout summary title should render inside .callout-title-label"
+    );
+
+    // 2 problem-statement callouts (原题 / 拓展题干) stay always-visible <aside class="callout">
+    const $visibleProblems = $p1("article aside.callout");
+    assert.equal($visibleProblems.length, 2, "Expected 2 always-visible problem <aside class='callout'> blocks");
+
+    // Visible prose must beat earlier collapsed details.callout for first-mention concept linking
+    const $lmLinks = $p1('article a.concept-ref[data-concept="linear-map"]');
+    assert.equal($lmLinks.length, 1);
+    assert.equal(
+      $lmLinks.closest("details.callout").length,
+      0,
+      "Visible prose must beat collapsed details.callout for first mention"
+    );
+
+    // Opt-out via site.config.json features.collapsibleCallouts = false restores <aside class="callout">
+    const cfgPath = path.join(targetDir, "site.config.json");
+    const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+    cfg.features.collapsibleCallouts = false;
+    fs.writeFileSync(cfgPath, `${JSON.stringify(cfg, null, 2)}\n`, "utf8");
+
+    await runBuild({ root: targetDir });
+    const vOptOut = runVerify({ root: targetDir });
+    assert.equal(vOptOut.ok, true, `collapsibleCallouts=false verify failed: ${JSON.stringify(vOptOut.errors)}`);
+
+    const p1OpenHtml = fs.readFileSync(
+      path.join(targetDir, "dist", "pages", "p01-derivative-intuition.html"),
+      "utf8"
+    );
+    const $p1Open = cheerio.load(p1OpenHtml);
+    assert.equal($p1Open("article details.callout").length, 0, "Opt-out should emit 0 details.callout blocks");
+    assert.equal($p1Open("article aside.callout").length, 7, "Opt-out should emit all 7 callouts as <aside>");
+
+    console.log("[smoke] 8/8 collapsible callouts, problem-prompt preservation, concept priority & opt-out PASS");
   } finally {
     fs.rmSync(tmpWork, { recursive: true, force: true });
   }
@@ -360,4 +463,5 @@ await testSingleModeInitAndCli();
 await testExtraStylesAndForbidEmDash();
 await testNpmPackContents();
 await testPhase7ContainersAndLazyKatex();
-console.log("\n[smoke] ALL 7 SMOKE TEST SUITES PASSED!");
+await testCollapsibleCallouts();
+console.log("\n[smoke] ALL 8 SMOKE TEST SUITES PASSED!");
